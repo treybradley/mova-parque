@@ -1,0 +1,54 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Custom slider styles for the visual system */
+.slider-custom [data-radix-slider-track] {
+  background: rgba(255, 255, 255, 0.1);
+  height: 2px;
+}
+
+.slider-custom [data-radix-slider-range] {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.slider-custom [data-radix-slider-thumb] {
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider-custom [data-radix-slider-thumb]:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+.slider-custom [data-radix-slider-thumb]:focus {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar for control panel */
+.control-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.control-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.control-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.control-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox scrollbar styling */
+.control-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
