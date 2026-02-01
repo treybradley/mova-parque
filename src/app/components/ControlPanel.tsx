@@ -346,7 +346,7 @@ export function ControlPanel(props: ControlPanelProps) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h1 className="text-md font-thin tracking-wider text-white/60 uppercase">
-                  Mova Parque
+                  Mova Parques
                 </h1>
                 <p className="text-xs text-white/40 leading-relaxed mt-0">
                   Realtime graphics driven by movement.{" "}
