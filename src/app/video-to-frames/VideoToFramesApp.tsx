@@ -7,7 +7,6 @@ import {
   PagePreviewHandle,
 } from "./components/page-preview";
 import { FrameManager } from "./components/frame-manager";
-import { PresetManager } from "./components/preset-manager";
 import { Sidebar } from "./components/sidebar";
 import { FilmGrain } from "./components/film-grain";
 import { AnimatedGradient } from "./components/animated-gradient";
@@ -343,15 +342,12 @@ export default function VideoToFramesApp({
                   <h4 className="text-xs font-normal tracking-wider text-white/60 uppercase text-[11px] underline">Configure</h4>
                 </div>
                 <Tabs defaultValue="layout">
-                  <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
+                  <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10">
                     <TabsTrigger value="layout" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/60">
                       Layout
                     </TabsTrigger>
                     <TabsTrigger value="frames" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/60">
                       Frames
-                    </TabsTrigger>
-                    <TabsTrigger value="presets" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/60">
-                      Presets
                     </TabsTrigger>
                   </TabsList>
 
@@ -368,13 +364,6 @@ export default function VideoToFramesApp({
                       allFrames={allFrames}
                       selectedFrames={selectedFrames}
                       onSelectedFramesChange={setSelectedFrames}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="presets" className="mt-4">
-                    <PresetManager
-                      config={pageConfig}
-                      onLoadPreset={setPageConfig}
                     />
                   </TabsContent>
                 </Tabs>

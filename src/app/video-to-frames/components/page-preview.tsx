@@ -26,7 +26,7 @@ export interface PagePreviewHandle {
   };
 }
 
-export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ frames, config, videoFPS, showRulers, rulerUnit }, ref) => {
+export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ frames, config, videoFPS: _videoFPS, showRulers, rulerUnit }, ref) => {
   const [currentPage, setCurrentPage] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
@@ -94,7 +94,7 @@ export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ fr
       fetch('http://127.0.0.1:7244/ingest/1e17813c-178a-4e43-9cd3-af84e872e1fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-preview.tsx:90',message:'Render skipped',data:{isLoading,hasCanvas:!!canvasRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
       // #endregion
     }
-  }, [loadedImages, config, currentPage, isLoading, showRulers]);
+  }, [loadedImages, config, currentPage, isLoading, showRulers, frames]);
 
   const formatTimecode = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -296,12 +296,12 @@ export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ fr
     ctx.font = 'bold 11px Roboto, sans-serif';
     
     const text = `#${frameNumber}`;
-    const metrics = ctx.measureText(text);
+    ctx.measureText(text); // for font baseline
     const padding = 6;
     
     // When both are shown and position is at bottom, display inline
-    const isBottomPosition = position === 'bottom-center' || position === 'bottom-left' || position === 'bottom-right';
-    const offset = (showTimecodes && isBottomPosition) ? 6 : 0; // Offset frame number to the left when timecode is also shown
+    const _isBottomPosition = position === 'bottom-center' || position === 'bottom-left' || position === 'bottom-right';
+    const offset = (showTimecodes && _isBottomPosition) ? 6 : 0; // Offset frame number to the left when timecode is also shown
     
     let textX = x + frameWidth / 2 - offset;
     let textY = y + frameHeight - padding - 2;
@@ -346,9 +346,6 @@ export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ fr
   ) => {
     ctx.fillStyle = '#6b7280';
     ctx.font = '9px Roboto, sans-serif';
-    
-    // When both are shown and frame number is at bottom, display inline
-    const isBottomPosition = frameNumberPosition === 'bottom-center' || frameNumberPosition === 'bottom-left' || frameNumberPosition === 'bottom-right';
     
     let textX = x + frameWidth / 2;
     let textY = y + frameHeight - 6;
@@ -602,12 +599,7 @@ export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ fr
           {showRulers ? (
             <Ruler width={config.width} height={config.height} unit={rulerUnit}>
               <canvas
-                ref={(el) => {
-                  // #region agent log
-                  if (canvasRef.current !== el) fetch('http://127.0.0.1:7244/ingest/1e17813c-178a-4e43-9cd3-af84e872e1fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-preview.tsx:570',message:'Canvas ref changed (with rulers)',data:{hasEl:!!el,oldRef:!!canvasRef.current,showRulers:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-                  // #endregion
-                  canvasRef.current = el;
-                }}
+                ref={canvasRef}
                 style={{ 
                   backgroundColor: 'var(--card)',
                   display: 'block',
@@ -619,12 +611,7 @@ export const PagePreview = forwardRef<PagePreviewHandle, PagePreviewProps>(({ fr
             </Ruler>
           ) : (
             <canvas
-              ref={(el) => {
-                // #region agent log
-                if (canvasRef.current !== el) fetch('http://127.0.0.1:7244/ingest/1e17813c-178a-4e43-9cd3-af84e872e1fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page-preview.tsx:582',message:'Canvas ref changed (without rulers)',data:{hasEl:!!el,oldRef:!!canvasRef.current,showRulers:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-                // #endregion
-                canvasRef.current = el;
-              }}
+              ref={canvasRef}
               style={{ 
                 backgroundColor: 'var(--card)',
                 display: 'block',
