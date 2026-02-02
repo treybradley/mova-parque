@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Upload, Video, X } from "lucide-react";
 
+const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024; // 300MB
+
 interface VideoUploadProps {
   onVideoUpload: (
     file: File,
@@ -20,6 +22,7 @@ export function VideoUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     null,
   );
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -27,16 +30,22 @@ export function VideoUpload({
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith("video/")) {
-      // Clean up previous URL
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setError(null);
 
-      const url = URL.createObjectURL(file);
-      setSelectedFile(file);
-      setPreviewUrl(url);
+    if (!file || !file.type.startsWith("video/")) return;
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setError("File must be 300MB or less");
+      return;
     }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    const url = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setPreviewUrl(url);
   };
 
   const handleVideoLoaded = () => {
@@ -53,6 +62,7 @@ export function VideoUpload({
     }
     setSelectedFile(null);
     setPreviewUrl(null);
+    setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -70,15 +80,20 @@ export function VideoUpload({
       />
 
       {!selectedFile ? (
-        <label htmlFor="video-upload">
-          <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-white/30 bg-white/5">
-            <Upload className="size-6 mx-auto mb-2 text-white/60" />
-            <p className="text-[11px] text-white/70 font-light">Click to upload video</p>
-            <p className="text-[9px] text-white/40 font-light">
-              MP4, MOV, or WebM
-            </p>
-          </div>
-        </label>
+        <div className="space-y-2">
+          {error && (
+            <p className="text-xs text-amber-400">{error}</p>
+          )}
+          <label htmlFor="video-upload">
+            <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-white/30 bg-white/5">
+              <Upload className="size-6 mx-auto mb-2 text-white/60" />
+              <p className="text-[11px] text-white/70 font-light">Click to upload video</p>
+              <p className="text-[9px] text-white/40 font-light">
+                MP4, WebM, MOV • 300MB max
+              </p>
+            </div>
+          </label>
+        </div>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">

@@ -20,7 +20,7 @@ const PAGE_PRESETS = {
   'Custom': { width: 210, height: 297 },
 };
 
-export function PageSettings({ config, onConfigChange, totalFrames }: PageSettingsProps) {
+export function PageSettings({ config, onConfigChange, totalFrames: _totalFrames }: PageSettingsProps) {
   const handlePresetChange = (preset: string) => {
     const dimensions = PAGE_PRESETS[preset as keyof typeof PAGE_PRESETS];
     onConfigChange({
@@ -39,9 +39,6 @@ export function PageSettings({ config, onConfigChange, totalFrames }: PageSettin
       height: config.width,
     });
   };
-
-  const framesPerPage = config.gridRows * config.gridCols;
-  const totalPages = Math.ceil(totalFrames / framesPerPage);
 
   return (
     <div className="space-y-4">

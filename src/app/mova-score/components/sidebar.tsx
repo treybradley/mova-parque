@@ -81,12 +81,12 @@ export function Sidebar({
                       Motion Scores
                     </h1>
                     <p className="text-xs text-white/40 leading-relaxed mt-0">
-                    Transform motion into midi sequences.{" "}
+                    Transform videos into midi sequences for sound design.{" "}
                     <button
                       onClick={() => setIsGuideOpen(true)}
                       className="text-[12px] font-thin text-white/60 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white/60 transition-all"
                     >
-                      read our usage guide
+                      Read our usage guide.
                     </button>
                     </p>
                   </div>

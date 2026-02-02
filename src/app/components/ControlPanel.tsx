@@ -349,12 +349,12 @@ export function ControlPanel(props: ControlPanelProps) {
                   Mova Parque
                 </h1>
                 <p className="text-xs text-white/40 leading-relaxed mt-0">
-                  Realtime graphics driven by movement.{" "}
+                  Graphics tools driven by realtime movement.{" "}
                   <button
                     onClick={props.onOpenPitchDeck}
                     className="text-[12px] font-thin text-white/60 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white/60 transition-all"
                   >
-                    read our usage guide
+                    Read our usage guide.
                   </button>
                 </p>
               </div>
@@ -2192,7 +2192,7 @@ export function ControlPanel(props: ControlPanelProps) {
         {props.appMode === "mova-parque" &&
           props.onStartRecording != null &&
           props.onStopRecording != null && (
-            <div className="flex-shrink-0 border-t border-white/10 p-4 md:p-8 bg-[#181a1a]">
+            <div className="flex-shrink-0 border-t border-white/10 p-2 md:p-4 bg-[#181a1a]">
               <CollapsibleSection title="Record & Export" defaultOpen={false}>
                 <RecordAndExport
                   hasVideoSource={

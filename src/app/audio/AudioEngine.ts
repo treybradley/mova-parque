@@ -165,9 +165,6 @@ export class AudioEngine {
   private masterVolume: Tone.Volume | null = null;
   private chorusEffect: Tone.Chorus | null = null;
   
-  // Animation frame for reactive updates
-  private updateLoopId: number | null = null;
-  
   // Timeout IDs for scheduled events
   private atmosphereTimeoutId: number | null = null;
   private shimmerTimeoutId: number | null = null;
@@ -321,7 +318,7 @@ export class AudioEngine {
     }
     
     if (this.shimmerSynth) {
-      this.shimmerSynth.triggerRelease();
+      this.shimmerSynth.releaseAll();
       this.shimmerSynth.dispose();
       this.shimmerSynth = null;
     }
@@ -401,11 +398,11 @@ export class AudioEngine {
     }
     
     if (this.shimmerSynth) {
-      this.shimmerSynth.triggerRelease();
+      this.shimmerSynth.releaseAll();
     }
     
     if (this.pulseSynth) {
-      this.pulseSynth.triggerRelease();
+      this.pulseSynth.triggerRelease(undefined);
     }
   }
   
@@ -608,7 +605,7 @@ export class AudioEngine {
     return (volume * 40) - 40;
   }
   
-  updateReactiveParams(data: { velocity: number; position: { x: number; y: number }; presence: boolean }): void {
+  updateReactiveParams(_data: { velocity: number; position: { x: number; y: number }; presence: boolean }): void {
     // This can be expanded to modulate reactive synth parameters based on body tracking
     // For now, it's a placeholder for future implementation
   }
@@ -643,38 +640,5 @@ export class AudioEngine {
     }
     
     this.initialized = false;
-  }
-  
-  // Helper function to transpose a note by a given number of semitones
-  private transposeNote(note: string, semitones: number): string {
-    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const match = note.match(/([A-G]#?)(\d+)/);
-    
-    if (!match) {
-      console.warn('Invalid note format:', note);
-      return note; // Return original if can't parse
-    }
-    
-    const [, name, octaveStr] = match;
-    const index = notes.indexOf(name);
-    
-    if (index === -1) {
-      console.warn('Invalid note name:', name);
-      return note;
-    }
-    
-    const currentOctave = parseInt(octaveStr);
-    const totalSemitones = index + semitones;
-    const newIndex = ((totalSemitones % 12) + 12) % 12; // Handle negative wrapping
-    const octaveChange = Math.floor(totalSemitones / 12);
-    const newOctave = currentOctave + octaveChange;
-    
-    return notes[newIndex] + newOctave;
-  }
-  
-  // Apply register shift to a note
-  private applyRegisterShift(note: string): string {
-    const semitones = this.settings.harmonic.registerShift * 12; // Convert octaves to semitones
-    return this.transposeNote(note, semitones);
   }
 }
