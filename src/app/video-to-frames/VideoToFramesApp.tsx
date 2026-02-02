@@ -495,18 +495,6 @@ function InfoCardContent({
           </div>
         </div>
       </div>
-
-      <div
-        className="p-3 rounded-lg bg-white/10 border border-white/20"
-      >
-        <h4 className="mb-2 text-white/70">💡 Printing Tips</h4>
-        <ul className="text-xs text-white/50 space-y-1">
-          <li>• Set printer to actual size (100% scale)</li>
-          <li>• Disable "Fit to page" option</li>
-          <li>• Use high-quality paper</li>
-          <li>• Print in color for frame numbers</li>
-        </ul>
-      </div>
     </div>
   );
 }
