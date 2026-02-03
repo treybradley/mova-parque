@@ -43,10 +43,11 @@ export function Sidebar({
               stiffness: 300,
               damping: 30,
             }}
-            className="fixed left-0 top-0 bottom-0 w-full max-w-[400px] bg-black/40 backdrop-blur-xl border-r border-white/10 overflow-y-auto control-panel-scroll z-50 lg:w-[400px]"
+            className="fixed left-0 top-0 w-full max-w-[400px] bg-black/40 backdrop-blur-xl border-r border-white/10 flex flex-col z-50 lg:w-[400px]"
+            style={{ height: "100dvh", maxHeight: "100dvh" }}
           >
-            <div className="p-4 md:p-8 space-y-5">
-              {/* Header with toggle button */}
+            {/* Sticky header */}
+            <div className="flex-shrink-0 sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-b border-white/10 p-4 md:p-8 pb-4">
               <div className="space-y-2 relative">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -142,17 +143,22 @@ export function Sidebar({
                   </div>
                 </div>
               </div>
-
-              {/* Content */}
-              {children}
-
-              {/* Footer */}
-              {footer && (
-                <div className="pt-5 border-t border-white/10">
-                  {footer}
-                </div>
-              )}
             </div>
+
+            {/* Scrollable content - min-h-0 and touch scroll for short viewports */}
+            <div
+              className="flex-1 min-h-0 overflow-y-auto control-panel-scroll p-4 md:p-8 space-y-5 pb-[env(safe-area-inset-bottom)]"
+              style={{ minHeight: 0, WebkitOverflowScrolling: "touch" }}
+            >
+              {children}
+            </div>
+
+            {/* Sticky footer */}
+            {footer && (
+              <div className="flex-shrink-0 sticky bottom-0 z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 p-4 md:p-8 pt-5 pb-[env(safe-area-inset-bottom)]">
+                {footer}
+              </div>
+            )}
           </motion.aside>
         )}
       </AnimatePresence>

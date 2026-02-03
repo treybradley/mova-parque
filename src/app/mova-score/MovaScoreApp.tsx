@@ -354,7 +354,10 @@ export default function MovaScoreApp({
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div
+      className="relative w-full overflow-hidden bg-black"
+      style={{ height: "100dvh", maxHeight: "100dvh" }}
+    >
       {/* Animated Background Elements */}
       <AnimatedGradient />
       <GridPattern />
@@ -423,43 +426,29 @@ export default function MovaScoreApp({
         </div>
       </Sidebar>
 
-      {/* Main Preview Area - Full Height */}
+      {/* Main Preview Area - Full size (sidebar overlays; Timeline overlays from bottom); 100dvh for mobile visible viewport */}
       <main
         className="relative z-10"
         style={{
-          minHeight: "100vh",
-          height: "100vh",
+          position: "fixed",
+          inset: 0,
+          height: "100dvh",
+          maxHeight: "100dvh",
           display: "flex",
           flexDirection: "column",
-          paddingLeft: isSidebarOpen ? "400px" : "0",
-          transition: "padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           overflow: "hidden",
         }}
       >
         {videoElement ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Video Canvas - Takes remaining space */}
-            <div className="flex-1 min-h-0">
-              <VideoCanvas
-                videoElement={videoElement}
-                isPlaying={isPlaying}
-                trackingSettings={trackingSettings}
-                visualSettings={visualSettings}
-                soundSettings={soundSettings}
-                isRecording={recordingState.isRecording}
-                onBlobFrameCapture={handleBlobFrameCapture}
-              />
-            </div>
-
-            {/* Timeline Drawer */}
-            <Timeline
-              recordingState={recordingState}
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
-              onClearRecording={handleClearRecording}
-              onExportMIDI={handleExportMIDI}
-              currentTime={currentTime}
-              videoDuration={videoDuration}
+          <div className="flex-1 min-h-0 w-full">
+            <VideoCanvas
+              videoElement={videoElement}
+              isPlaying={isPlaying}
+              trackingSettings={trackingSettings}
+              visualSettings={visualSettings}
+              soundSettings={soundSettings}
+              isRecording={recordingState.isRecording}
+              onBlobFrameCapture={handleBlobFrameCapture}
             />
           </div>
         ) : (
@@ -502,6 +491,24 @@ export default function MovaScoreApp({
           </div>
         )}
       </main>
+
+      {/* Timeline - Fixed overlay at bottom; width adjusts so it never overlaps sidebar (z-40, below sidebar z-50) */}
+      {videoElement && (
+        <div
+          className="fixed bottom-0 right-0 z-40 transition-[left] duration-300 ease-out"
+          style={{ left: isSidebarOpen ? 400 : 0 }}
+        >
+          <Timeline
+            recordingState={recordingState}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onClearRecording={handleClearRecording}
+            onExportMIDI={handleExportMIDI}
+            currentTime={currentTime}
+            videoDuration={videoDuration}
+          />
+        </div>
+      )}
     </div>
   );
 }

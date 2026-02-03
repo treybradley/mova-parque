@@ -373,16 +373,14 @@ export default function VideoToFramesApp({
         </div>
       </Sidebar>
 
-      {/* Main Preview Area - Full Height */}
+      {/* Main Preview Area - Full size (sidebar overlays like Mova Parque) */}
       <main
         className="relative z-10"
         style={{
-          minHeight: "100vh",
-          height: "100vh",
+          position: "fixed",
+          inset: 0,
           display: "flex",
           flexDirection: "column",
-          paddingLeft: isSidebarOpen ? "400px" : "0",
-          transition: "padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           overflow: "auto",
         }}
       >

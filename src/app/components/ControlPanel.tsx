@@ -339,9 +339,8 @@ export function ControlPanel(props: ControlPanelProps) {
         transition={{ duration: 0.5, ease: "easeInOut" }}
         className="fixed left-0 top-0 h-full w-[320px] md:w-[400px] bg-black/40 backdrop-blur-xl border-r border-white/10 flex flex-col z-50"
       >
-        <div className="flex-1 overflow-y-auto min-h-0 control-panel-scroll">
-        <div className="p-4 md:p-8 space-y-5">
-          {/* Header with toggle button */}
+        {/* Sticky header */}
+        <div className="flex-shrink-0 sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-b border-white/10 -mx-0 px-4 pt-4 md:px-8 md:pt-8 pb-4">
           <div className="space-y-2 relative">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -437,7 +436,11 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
             </div>
           </div>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="flex-1 min-h-0 overflow-y-auto control-panel-scroll">
+          <div className="p-4 md:p-8 space-y-5">
           {/* Body Segmentation - Always visible */}
           <div className="space-y-4">
             <Label className="text-xs font-normal tracking-wider text-white/60 uppercase text-[11px]">
@@ -2187,8 +2190,8 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
             </div>
           </CollapsibleSection>
-        </div>
-        </div>
+            </div>
+          </div>
         {props.appMode === "mova-parque" &&
           props.onStartRecording != null &&
           props.onStopRecording != null && (
