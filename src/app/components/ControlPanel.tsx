@@ -19,8 +19,10 @@ import {
   Music,
   Sparkles,
   PanelLeftOpen,
+  SwitchCamera,
 } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "./ui/use-mobile";
 import { ResponsiveInfoPopover } from "./ui/responsive-info-popover";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 import { getShaderPreset } from "../shaders/index";
@@ -158,6 +160,7 @@ interface ControlPanelProps {
   onVideoSelect: (file: File) => void;
   onClearVideo: () => void;
   onSwitchToWebcam: () => void;
+  onSwitchCamera?: () => void;
   cameraStream: MediaStream | null;
   appMode?: 'mova-parque' | 'video-to-frames' | 'mova-score';
   onAppModeChange?: (mode: 'mova-parque' | 'video-to-frames' | 'mova-score') => void;
@@ -189,6 +192,7 @@ const paletteColors = [
 
 export function ControlPanel(props: ControlPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const isMobile = useIsMobile();
 
   // Get current shader preset info
   const currentPreset = getShaderPreset(
@@ -491,6 +495,20 @@ export function ControlPanel(props: ControlPanelProps) {
               >
                 {props.cameraStream ? "Turn Off Webcam" : "Use Webcam"}
               </button>
+              {/* Switch camera (front/back) - mobile only, Mova Parque only, when webcam is on */}
+              {props.appMode === "mova-parque" &&
+                isMobile &&
+                props.cameraStream &&
+                props.onSwitchCamera && (
+                  <button
+                    type="button"
+                    onClick={props.onSwitchCamera}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-light transition-all border bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 hover:border-white/20 flex items-center justify-center gap-2"
+                  >
+                    <SwitchCamera className="size-3.5" />
+                    Switch camera
+                  </button>
+                )}
             </div>
             {/* Visual Separator */}
             <div className="border-t border-white/10"></div>

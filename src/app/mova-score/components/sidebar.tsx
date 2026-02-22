@@ -79,10 +79,10 @@ export function Sidebar({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h1 className="text-md font-thin tracking-wider text-white/60 uppercase">
-                      Motion Scores
+                    Motion Scores
                     </h1>
                     <p className="text-xs text-white/40 leading-relaxed mt-0">
-                    Transform videos into midi sequences for sound design.{" "}
+                    Transform videos into sound design.{" "}
                     <button
                       onClick={() => setIsGuideOpen(true)}
                       className="text-[12px] font-thin text-white/60 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white/60 transition-all"
@@ -225,7 +225,7 @@ export function Sidebar({
         >
           <DialogHeader>
             <DialogTitle className="text-white">
-              Motion Scores Usage Guide
+            Motion Scores Usage Guide
             </DialogTitle>
             <DialogDescription className="text-white/60">
               Learn how to transform video motion into MIDI sequences

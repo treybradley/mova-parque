@@ -248,7 +248,7 @@ export function Timeline({
       style={{ height: isExpanded ? "320px" : "60px" }}
     >
       {/* Toolbar - Always Visible */}
-      <div className="px-4 py-2 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center gap-3 shrink-0">
         {/* Expand/Collapse Button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}

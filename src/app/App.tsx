@@ -11,6 +11,15 @@ import { PoseEstimationLayer } from "@/app/components/PoseEstimationLayer";
 import { MotionAnalysisOverlay } from "@/app/components/MotionAnalysisOverlay";
 import { PitchDeckModal } from "@/app/components/PitchDeckModal";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { useIsMobile } from "@/app/components/ui/use-mobile";
+import {
   useState,
   useRef,
   useCallback,
@@ -133,7 +142,19 @@ export default function App() {
   });
   const [cameraStream, setCameraStream] =
     useState<MediaStream | null>(null);
-  
+  const [cameraFacingMode, setCameraFacingMode] = useState<
+    "user" | "environment"
+  >("user");
+
+  const isMobile = useIsMobile();
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
+  useEffect(() => {
+    if (appMode !== "mova-parque" || !isMobile) return;
+    if (typeof sessionStorage === "undefined") return;
+    if (sessionStorage.getItem("mova-parque-mobile-warning-seen")) return;
+    setShowMobileWarning(true);
+  }, [appMode, isMobile]);
+
   // Shared video element for webcam (single source of truth)
   // Initialize the video element
   const sharedWebcamVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -742,11 +763,11 @@ export default function App() {
     // Request webcam stream (single source of truth - only requested here)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { width: 640, height: 480, facingMode: cameraFacingMode },
         audio: false,
       });
       setCameraStream(stream);
-      
+
       // Auto-disable motion analysis for webcam (pose detection doesn't work reliably with webcam)
       if (motionAnalysis.enabled) {
         handleMotionAnalysisChange("enabled", false);
@@ -761,7 +782,26 @@ export default function App() {
         metadata: null,
       });
     }
-  }, [videoSource, cameraStream, motionAnalysis.enabled, handleMotionAnalysisChange]);
+  }, [videoSource, cameraStream, cameraFacingMode, motionAnalysis.enabled, handleMotionAnalysisChange]);
+
+  const handleSwitchCamera = useCallback(async () => {
+    if (!cameraStream) return;
+    cameraStream.getTracks().forEach((track) => track.stop());
+    setCameraStream(null);
+    const nextMode =
+      cameraFacingMode === "user" ? "environment" : "user";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: nextMode },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setCameraFacingMode(nextMode);
+    } catch (error) {
+      console.error("Error switching camera:", error);
+      setCameraFacingMode(cameraFacingMode);
+    }
+  }, [cameraStream, cameraFacingMode]);
 
   // Recording handlers (mova-parque)
   const handleStartRecording = useCallback(() => {
@@ -1055,6 +1095,7 @@ export default function App() {
         onVideoSelect={handleVideoSelect}
         onClearVideo={handleClearVideo}
         onSwitchToWebcam={handleSwitchToWebcam}
+        onSwitchCamera={handleSwitchCamera}
         cameraStream={cameraStream}
         isRecording={isRecording}
         recordingStartTime={recordingStartTime}
@@ -1083,6 +1124,45 @@ export default function App() {
         isOpen={isPitchDeckOpen}
         onClose={() => setIsPitchDeckOpen(false)}
       />
+
+      {/* Mobile warning - one-time per session when on Mova Parque */}
+      <Dialog
+        open={showMobileWarning}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowMobileWarning(false);
+            try {
+              sessionStorage.setItem("mova-parque-mobile-warning-seen", "1");
+            } catch (_) {}
+          }
+        }}
+      >
+        <DialogContent className="bg-black/95 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Heads up</DialogTitle>
+            <DialogDescription className="text-white/60">
+              Uploading or processing some videos on mobile can be slow. For the
+              best experience, we recommend using a desktop browser.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setShowMobileWarning(false);
+                try {
+                  sessionStorage.setItem(
+                    "mova-parque-mobile-warning-seen",
+                    "1",
+                  );
+                } catch (_) {}
+              }}
+              className="px-4 py-2 rounded-lg bg-white/20 text-white text-sm font-light hover:bg-white/30 transition-colors"
+            >
+              Got it
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Video element for webcam - MUST be in DOM for TensorFlow.js to work */}
       {/* Used for both processing (hidden) and display (visible when camera.showRawVideo is true) */}
