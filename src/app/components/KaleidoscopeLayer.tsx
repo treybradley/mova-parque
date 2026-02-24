@@ -171,11 +171,10 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
             ctx.drawImage(poseCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
           }
           
-          // Draw blob tracking canvas (typically uses screen blend mode)
+          // Draw blob tracking canvas (source-over: stack on top of previous layers)
           if (blobValid && blobCanvas) {
-            ctx.globalCompositeOperation = 'screen'; // BlobTrackingLayer typically uses screen blend
+            ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(blobCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
-            ctx.globalCompositeOperation = 'source-over'; // Reset
           }
         };
         

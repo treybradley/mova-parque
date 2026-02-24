@@ -142,9 +142,8 @@ export function startRecording(
         ctx.drawImage(poseCanvas, 0, 0, poseCanvas.width, poseCanvas.height, 0, 0, destW, destH);
       }
       if (blobTrackingEnabled && blobValid && blobCanvas) {
-        ctx.globalCompositeOperation = "screen";
-        ctx.drawImage(blobCanvas, 0, 0, blobCanvas.width, blobCanvas.height, 0, 0, destW, destH);
         ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(blobCanvas, 0, 0, blobCanvas.width, blobCanvas.height, 0, 0, destW, destH);
       }
     }
   };

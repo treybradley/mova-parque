@@ -385,9 +385,7 @@ export function BlobTrackingLayer({ config, videoSource, sharedWebcamVideoRef }:
     <canvas
       ref={canvasRef}
       className="blob-tracking-canvas pointer-events-none z-[10]"
-      style={{
-        mixBlendMode: config.applyBlendMode ? 'screen' : 'normal',
-      }}
+      style={{ mixBlendMode: 'normal' }}
     />
   );
 }

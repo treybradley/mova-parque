@@ -1111,26 +1111,6 @@ export function ControlPanel(props: ControlPanelProps) {
                   </div>
                 </div>
 
-                {/* Apply Blend Mode */}
-                <div className="space-y-2 pb-4 border-b border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70 font-light">
-                      Apply Blend Mode
-                    </span>
-                    <Switch
-                      checked={
-                        props.blobTracking.applyBlendMode
-                      }
-                      onCheckedChange={(value) =>
-                        props.onBlobTrackingChange(
-                          "applyBlendMode",
-                          value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
                 {/* Detection Settings */}
                 <div className="space-y-4 pt-4">
                   <div className="space-y-6">
