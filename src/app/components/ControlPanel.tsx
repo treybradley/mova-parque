@@ -172,6 +172,8 @@ interface ControlPanelProps {
   onExportQualityPresetChange?: (preset: ExportQualityPreset) => void;
   onStartRecording?: () => void;
   onStopRecording?: () => void;
+  canUsePremiumExport?: boolean;
+  onRequestSignIn?: () => void;
 }
 
 const paletteNames = [
@@ -421,10 +423,12 @@ export function ControlPanel(props: ControlPanelProps) {
                         Account
                       </DropdownMenuLabel>
                       <DropdownMenuItem
-                        disabled
-                        className="text-white/40 cursor-not-allowed"
+                        onClick={() => props.onRequestSignIn?.()}
+                        className="text-white/70 focus:text-white focus:bg-white/10 cursor-pointer"
                       >
-                        <span className="text-xs">Coming soon</span>
+                        <span className="text-xs">
+                          {props.canUsePremiumExport ? "Account" : "Sign in"}
+                        </span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -2208,6 +2212,7 @@ export function ControlPanel(props: ControlPanelProps) {
                   onExportQualityPresetChange={props.onExportQualityPresetChange ?? (() => {})}
                   onStartRecording={props.onStartRecording}
                   onStopRecording={props.onStopRecording}
+                  canUsePremiumExport={props.canUsePremiumExport}
                 />
               </CollapsibleSection>
             </div>

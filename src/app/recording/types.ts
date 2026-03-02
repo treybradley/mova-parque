@@ -55,6 +55,8 @@ export interface StartRecordingOptions {
   rawVideoOpacity: number;
   /** Which layers to include in the composite; taken from UI at recording start. */
   layerToggles: RecordingLayerToggles;
+  /** When true, draw a logo watermark (e.g. 20% opacity) on the export. Used for anonymous/free users. */
+  applyWatermark: boolean;
 }
 
 export interface RecordingResult {

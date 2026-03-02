@@ -4,6 +4,7 @@ import type {
   StartRecordingOptions,
   RecordingEngineHandle,
 } from "./types";
+import { drawLogoWatermarkGrid } from "./watermarkLogo";
 
 /**
  * Returns recording dimensions from the current video source.
@@ -58,6 +59,8 @@ export function startRecording(
     showGhostTrails,
   } = layerToggles;
 
+  const applyWatermark = options.applyWatermark ?? false;
+
   const recordingCanvas = document.createElement("canvas");
   recordingCanvas.width = destW;
   recordingCanvas.height = destH;
@@ -96,9 +99,13 @@ export function startRecording(
         destW,
         destH
       );
+      if (applyWatermark) {
+        ctx.globalCompositeOperation = "source-over";
+        drawLogoWatermarkGrid(ctx, destW, destH, 0.2);
+      }
     } else {
       const allCanvases = document.querySelectorAll(
-        "canvas:not(.kaleidoscope-canvas):not(.film-grain-canvas)"
+        "canvas:not(.kaleidoscope-canvas):not(.film-grain-canvas):not(.watermark-layer-canvas)"
       );
       const bgCanvas = allCanvases[0] as HTMLCanvasElement | undefined;
       // When ghost trails are off, use current-frame-only canvas so export has no ghosts
@@ -144,6 +151,11 @@ export function startRecording(
       if (blobTrackingEnabled && blobValid && blobCanvas) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(blobCanvas, 0, 0, blobCanvas.width, blobCanvas.height, 0, 0, destW, destH);
+      }
+
+      if (applyWatermark) {
+        ctx.globalCompositeOperation = "source-over";
+        drawLogoWatermarkGrid(ctx, destW, destH, 0.2);
       }
     }
   };

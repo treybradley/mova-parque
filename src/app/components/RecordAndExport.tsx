@@ -19,6 +19,8 @@ interface RecordAndExportProps {
   onExportQualityPresetChange: (preset: ExportQualityPreset) => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  /** When false, only Standard quality is shown and export uses watermark. */
+  canUsePremiumExport?: boolean;
 }
 
 function formatDuration(ms: number): string {
@@ -26,6 +28,24 @@ function formatDuration(ms: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
 }
 
 export function RecordAndExport({
@@ -38,7 +58,10 @@ export function RecordAndExport({
   onExportQualityPresetChange,
   onStartRecording,
   onStopRecording,
+  canUsePremiumExport = true,
 }: RecordAndExportProps) {
+  const effectivePreset =
+    canUsePremiumExport ? exportQualityPreset : "standard";
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!isRecording || recordingStartTime == null) return;
@@ -79,8 +102,11 @@ export function RecordAndExport({
         <div className="flex-1 space-y-1.5">
           <Label className="text-xs font-normal text-white/60">Quality</Label>
           <Select
-            value={exportQualityPreset}
-            onValueChange={(v) => onExportQualityPresetChange(v as ExportQualityPreset)}
+            value={effectivePreset}
+            onValueChange={(v) =>
+              canUsePremiumExport &&
+              onExportQualityPresetChange(v as ExportQualityPreset)
+            }
           >
             <SelectTrigger className="h-8 rounded-lg border-white/10 bg-white/5 text-xs font-light text-white data-[placeholder]:text-white/60 [&_svg]:text-white/80">
               <SelectValue placeholder="Quality" />
@@ -89,11 +115,31 @@ export function RecordAndExport({
               <SelectItem value="standard" className="text-white focus:bg-white/15 focus:text-white">
                 Standard
               </SelectItem>
-              <SelectItem value="high" className="text-white focus:bg-white/15 focus:text-white">
-                High
+              <SelectItem
+                value="high"
+                disabled={!canUsePremiumExport}
+                title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
+                className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  High
+                  {!canUsePremiumExport && (
+                    <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
+                  )}
+                </span>
               </SelectItem>
-              <SelectItem value="max" className="text-white focus:bg-white/15 focus:text-white">
-                Max
+              <SelectItem
+                value="max"
+                disabled={!canUsePremiumExport}
+                title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
+                className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  Max
+                  {!canUsePremiumExport && (
+                    <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
+                  )}
+                </span>
               </SelectItem>
             </SelectContent>
           </Select>

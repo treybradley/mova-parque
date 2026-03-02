@@ -4,12 +4,14 @@ import { BodySegmentationLayer } from "@/app/components/BodySegmentationLayer";
 import { RawVideoLayer } from "@/app/components/RawVideoLayer";
 import { ShaderLayer } from "@/app/components/ShaderLayer";
 import { KaleidoscopeLayer } from "@/app/components/KaleidoscopeLayer";
+import { WatermarkLayer } from "@/app/components/WatermarkLayer";
 import { FilmGrainLayer } from "@/app/components/FilmGrainLayer";
 import { BlobTrackingLayer } from "@/app/components/BlobTrackingLayer";
 import { GridBackgroundLayer } from "@/app/components/GridBackgroundLayer";
 import { PoseEstimationLayer } from "@/app/components/PoseEstimationLayer";
 import { MotionAnalysisOverlay } from "@/app/components/MotionAnalysisOverlay";
 import { PitchDeckModal } from "@/app/components/PitchDeckModal";
+import { SignInModal } from "@/app/components/SignInModal";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { useAuth } from "@/app/auth/AuthProvider";
 import { useIsMobile } from "@/app/components/ui/use-mobile";
 import {
   useState,
@@ -217,6 +220,14 @@ export default function App() {
   const recordingEngineRef = useRef<ReturnType<typeof startRecording> | null>(null);
   const [exportFrameRate, setExportFrameRate] = useState<ExportFrameRate>(30);
   const [exportQualityPreset, setExportQualityPreset] = useState<ExportQualityPreset>("standard");
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
+
+  const { user } = useAuth();
+  const canUsePremiumExport = !!user;
+
+  useEffect(() => {
+    if (!user) setExportQualityPreset("standard");
+  }, [user]);
 
   // Motion analysis state
   const [motionAnalysis, setMotionAnalysis] = useState({
@@ -815,11 +826,13 @@ export default function App() {
       return;
     }
     try {
+      const usePremium = !!user;
+      const qualityPreset = usePremium ? exportQualityPreset : "standard";
       const handle = startRecording({
         width: dims.width,
         height: dims.height,
         frameRate: exportFrameRate,
-        videoBitsPerSecond: EXPORT_QUALITY_BITRATE[exportQualityPreset],
+        videoBitsPerSecond: EXPORT_QUALITY_BITRATE[qualityPreset],
         kaleidoscopeMode: background.kaleidoscope as "none" | "horizontal" | "vertical" | "radial",
         grainIntensity: atmosphere.noise,
         showRawVideo: camera.showRawVideo,
@@ -833,6 +846,7 @@ export default function App() {
           showBackground: camera.showBackground,
           showGhostTrails: bodyEffects.showGhostTrails,
         },
+        applyWatermark: !usePremium,
       });
       recordingEngineRef.current = handle;
       setIsRecording(true);
@@ -841,6 +855,7 @@ export default function App() {
       console.error("Failed to start recording:", err);
     }
   }, [
+    user,
     videoSource,
     cameraStream,
     exportFrameRate,
@@ -1042,6 +1057,14 @@ export default function App() {
         </KaleidoscopeLayer>
       </FilmGrainLayer>
 
+      <WatermarkLayer
+        show={!canUsePremiumExport}
+        videoSource={
+          videoSource.type === "upload"
+            ? videoSource.videoElement
+            : cameraStream
+        }
+      />
 
       {/* Motion Analysis Overlay - UI overlay */}
       {motionAnalysis.enabled && (
@@ -1105,6 +1128,8 @@ export default function App() {
         onExportQualityPresetChange={setExportQualityPreset}
         onStartRecording={handleStartRecording}
         onStopRecording={handleStopRecording}
+        canUsePremiumExport={canUsePremiumExport}
+        onRequestSignIn={() => setSignInModalOpen(true)}
       />
 
       {/* SoundPanel hidden for now - keeping AudioEngine code for future use */}
@@ -1123,6 +1148,11 @@ export default function App() {
       <PitchDeckModal
         isOpen={isPitchDeckOpen}
         onClose={() => setIsPitchDeckOpen(false)}
+      />
+
+      <SignInModal
+        open={signInModalOpen}
+        onOpenChange={setSignInModalOpen}
       />
 
       {/* Mobile warning - one-time per session when on Mova Parque */}
