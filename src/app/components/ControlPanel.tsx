@@ -354,7 +354,7 @@ export function ControlPanel(props: ControlPanelProps) {
                   Mova Parque
                 </h1>
                 <p className="text-xs text-white/40 leading-relaxed mt-0">
-                  Graphics tools driven by realtime movement.{" "}
+                  Realtime graphics tools driven by movement.{" "}
                   <button
                     onClick={props.onOpenPitchDeck}
                     className="text-[12px] font-thin text-white/60 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white/60 transition-all"
@@ -514,6 +514,7 @@ export function ControlPanel(props: ControlPanelProps) {
                   </button>
                 )}
             </div>
+
             {/* Visual Separator */}
             <div className="border-t border-white/10"></div>
 
@@ -554,6 +555,9 @@ export function ControlPanel(props: ControlPanelProps) {
 
           </div>
 
+          {/* Visual Separator */}
+          <div className="border-t border-white/10"></div>
+
 
           {/* ========== SECTION 3: BODY & TRAILS ========== */}
           <CollapsibleSection
@@ -561,7 +565,7 @@ export function ControlPanel(props: ControlPanelProps) {
             defaultOpen={false}
           >
             {/* Section description and info button */}
-            <div className="pb-4 border-b border-white/10 space-y-3">
+            <div className="pb-0 space-y-3">
               <p className="text-xs text-white/50 leading-relaxed">
                 Control motion trail persistence, aura effects,
                 and body silhouette appearance.
@@ -572,7 +576,7 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Show Ghost Trails Toggle */}
-            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between pt-0">
               <span className="text-[12px] text-white/70 font-light">
                 Show Ghost Trails
               </span>
@@ -748,6 +752,9 @@ export function ControlPanel(props: ControlPanelProps) {
 
           </CollapsibleSection>
 
+          {/* Visual Separator */}
+          <div className="border-t border-white/10"></div>
+          
           {/* ========== MOTION ANALYSIS ========== */}
           <CollapsibleSection
             title="Motion Analysis"
@@ -788,12 +795,7 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
 
               {/* Skeleton Customization */}
-              <div className="pt-4 border-t border-white/10 space-y-4">
-                <div className="text-xs text-white/50 font-light uppercase">
-                  Skeleton Customization
-                </div>
-
-                {/* Skeleton Color */}
+              <div className="pt-0 space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[12px] text-white/70 font-light">
                     Skeleton Color
@@ -1047,8 +1049,11 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
             </div>
           </CollapsibleSection>
+                    
+          {/* Visual Separator */}
+          <div className="border-t border-white/10"></div>
 
-          {/* ========== SECTION 2: BACKGROUND ========== */}
+          {/* ========== SECTION 3: TRIPPY SECTION ========== */}
           <CollapsibleSection
             title="The Trippy Section"
             defaultOpen={false}
@@ -1092,7 +1097,7 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Blob Tracking - Nested Collapsible */}
-            <div className="pt-6">
+            <div className="pt-2">
               <CollapsibleSection
                 title="Blob Tracking"
                 defaultOpen={false}
@@ -1781,7 +1786,7 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Background Atmosphere - GLSL Shader Controls */}
-            <div className="pt-6">
+            <div className="pt-2">
               <CollapsibleSection
                 title="Background Atmosphere"
                 defaultOpen={false}  // Collapsed by default (easter egg)
@@ -1911,13 +1916,16 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
           </CollapsibleSection>
 
+          {/* Visual Separator */}
+          <div className="border-t border-white/10"></div>
+
           {/* Grid Background */}
           <CollapsibleSection
             title="Grid Background"
             defaultOpen={false}
           >
             {/* Master Enable */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-0">
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-white/70 font-light">
                   Enable Grid Background
@@ -1932,7 +1940,7 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Grid Style */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <span className="text-xs text-white/70 font-light">
                 Grid Style
               </span>
@@ -1957,11 +1965,11 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
             </div>
 
-            {/* Line Color */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            {/* Grid Color */}
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Line Color
+                  Grid Color
                 </span>
               </div>
               <input
@@ -1979,10 +1987,10 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Grid Size */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Size
+                  Grid Size
                 </span>
                 <span className="text-xs text-white/50 font-light">
                   {Math.round(props.gridBackground.size)}px
@@ -2001,10 +2009,10 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Line Width */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Line Width
+                  Grid Line Width
                 </span>
                 <span className="text-xs text-white/50 font-light">
                   {props.gridBackground.lineWidth.toFixed(1)}px
@@ -2023,10 +2031,10 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Line Opacity */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Line Opacity
+                  Grid Line Opacity
                 </span>
                 <span className="text-xs text-white/50 font-light">
                   {Math.round(props.gridBackground.opacity * 100)}%
@@ -2045,10 +2053,10 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Background Color */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Background Color
+                  Grid Background Color
                 </span>
               </div>
               <input
@@ -2069,10 +2077,10 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Background Opacity */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70 font-light">
-                  Background Opacity
+                  Grid Background Opacity
                 </span>
                 <span className="text-xs text-white/50 font-light">
                   {Math.round(
@@ -2097,13 +2105,16 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
           </CollapsibleSection>
 
+          {/* Visual Separator */}
+          <div className="border-t border-white/10"></div>
+
           {/* ========== POST PROCESSING ========== */}
           <CollapsibleSection
             title="Post Processing"
             defaultOpen={false}
           >
             {/* Film Grain Intensity */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-white/70 font-light">
                   Film Grain
@@ -2125,7 +2136,7 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             {/* Grain Speed */}
-            <div className="space-y-2 pb-4 border-b border-white/10">
+            <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-white/70 font-light">
                   Grain Speed
