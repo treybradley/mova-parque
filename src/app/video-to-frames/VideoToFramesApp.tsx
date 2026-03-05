@@ -34,6 +34,8 @@ import {
   Ruler,
 } from "lucide-react";
 import Logomark from "@/assets/Logomark";
+import { useAuth } from "@/app/auth/AuthProvider";
+import { SignInModal } from "@/app/components/SignInModal";
 
 export interface PageConfig {
   width: number;
@@ -87,6 +89,8 @@ export default function VideoToFramesApp({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isInstructionsOpen, setIsInstructionsOpen] =
     useState(false);
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
+  const { user } = useAuth();
   const [showRulers, setShowRulers] = useState(false);
   const [rulerUnit, setRulerUnit] = useState<"in" | "cm">("in");
   const [pageConfig, setPageConfig] = useState<PageConfig>({
@@ -180,6 +184,8 @@ export default function VideoToFramesApp({
         onOpenInstructions={() => setIsInstructionsOpen(true)}
         appMode={appMode}
         onAppModeChange={onAppModeChange}
+        canUsePremiumExport={!!user}
+        onRequestSignIn={() => setSignInModalOpen(true)}
         footer={
           allFrames.length > 0 ? (
             <div className="space-y-3">
@@ -372,6 +378,11 @@ export default function VideoToFramesApp({
           )}
         </div>
       </Sidebar>
+
+      <SignInModal
+        open={signInModalOpen}
+        onOpenChange={setSignInModalOpen}
+      />
 
       {/* Main Preview Area - Full size (sidebar overlays like Mova Parque) */}
       <main

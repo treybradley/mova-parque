@@ -16,6 +16,7 @@ interface AuthContextValue {
   loading: boolean;
   error: string | null;
   signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -70,6 +71,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const verifyEmailOtp = useCallback(
+    async (email: string, token: string): Promise<{ error: string | null }> => {
+      setError(null);
+      if (!supabase) {
+        setError("Auth is not configured.");
+        return { error: "Auth is not configured." };
+      }
+      const { error: err } = await supabase.auth.verifyOtp({
+        email,
+        token: token.trim(),
+        type: "email",
+      });
+      if (err) {
+        setError(err.message);
+        return { error: err.message };
+      }
+      return { error: null };
+    },
+    []
+  );
+
   const signInWithOAuth = useCallback(
     async (provider: OAuthProvider): Promise<{ error: string | null }> => {
       setError(null);
@@ -104,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     error,
     signInWithMagicLink,
+    verifyEmailOtp,
     signInWithOAuth,
     signOut,
   };

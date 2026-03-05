@@ -24,6 +24,8 @@ interface SidebarProps {
   footer?: ReactNode;
   appMode?: 'mova-parque' | 'video-to-frames' | 'mova-score';
   onAppModeChange?: (mode: 'mova-parque' | 'video-to-frames' | 'mova-score') => void;
+  canUsePremiumExport?: boolean;
+  onRequestSignIn?: () => void;
 }
 
 export function Sidebar({
@@ -33,6 +35,8 @@ export function Sidebar({
   footer,
   appMode,
   onAppModeChange,
+  canUsePremiumExport,
+  onRequestSignIn,
 }: SidebarProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -151,10 +155,12 @@ export function Sidebar({
                             Account
                           </DropdownMenuLabel>
                           <DropdownMenuItem
-                            disabled
-                            className="text-white/40 cursor-not-allowed"
+                            onClick={() => onRequestSignIn?.()}
+                            className="text-white/70 focus:text-white focus:bg-white/10 cursor-pointer"
                           >
-                            <span className="text-xs">Coming soon</span>
+                            <span className="text-xs">
+                              {canUsePremiumExport ? "Details" : "Sign in"}
+                            </span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

@@ -13,6 +13,8 @@ import { downloadMIDIFile } from './utils/midiExporter';
 import { Button } from './components/ui/button';
 import { PanelLeftOpen } from 'lucide-react';
 import Logomark from '@/assets/Logomark';
+import { useAuth } from '@/app/auth/AuthProvider';
+import { SignInModal } from '@/app/components/SignInModal';
 
 interface MovaScoreAppProps {
   appMode?: 'mova-parque' | 'video-to-frames' | 'mova-score';
@@ -28,7 +30,9 @@ export default function MovaScoreApp({
   const [currentTime, setCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const { user } = useAuth();
   const [currentVideo, setCurrentVideo] = useState<{
     fileName: string;
     duration: number;
@@ -381,6 +385,8 @@ export default function MovaScoreApp({
         onToggle={handleSidebarToggle}
         appMode={appMode}
         onAppModeChange={onAppModeChange}
+        canUsePremiumExport={!!user}
+        onRequestSignIn={() => setSignInModalOpen(true)}
       >
         <div className="space-y-6">
           {/* Step 1: Video Source */}
@@ -425,6 +431,11 @@ export default function MovaScoreApp({
           )}
         </div>
       </Sidebar>
+
+      <SignInModal
+        open={signInModalOpen}
+        onOpenChange={setSignInModalOpen}
+      />
 
       {/* Main Preview Area - Full size (sidebar overlays; Timeline overlays from bottom); 100dvh for mobile visible viewport */}
       <main

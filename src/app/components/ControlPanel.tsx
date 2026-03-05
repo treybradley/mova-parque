@@ -427,7 +427,7 @@ export function ControlPanel(props: ControlPanelProps) {
                         className="text-white/70 focus:text-white focus:bg-white/10 cursor-pointer"
                       >
                         <span className="text-xs">
-                          {props.canUsePremiumExport ? "Account" : "Sign in"}
+                          {props.canUsePremiumExport ? "Details" : "Sign in"}
                         </span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
