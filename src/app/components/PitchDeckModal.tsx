@@ -18,11 +18,11 @@ export function PitchDeckModal({
   const slides = [
     // Slide 1: Quick Start
     {
-      title: "Quick Start",
-      subtitle: "Get Up and Running",
+      title: "Usage Guide",
+      subtitle: "Tips and tricks to get up and running",
       content: (
         <div className="space-y-8">
-          <p className="text-xl leading-relaxed text-white/90">
+          <p className="text-sm leading-relaxed text-white/90">
             A real-time visual system that creates atmospheric
             effects and responds to movement through your webcam
             or uploaded videos.
@@ -34,7 +34,7 @@ export function PitchDeckModal({
                 1
               </div>
               <div>
-                <h4 className="text-white/70 mb-1">Choose Your Video Source</h4>
+                <h4 className="text-white/70 mb-1 text-sm">Choose Your Video Source</h4>
                 <p className="text-white/40 text-sm">
                   Upload a video file or use your{" "}
                   <span className="text-white/70">webcam</span>{" "}
@@ -48,7 +48,7 @@ export function PitchDeckModal({
                 2
               </div>
               <div>
-                <h4 className="text-white/70 mb-1">Explore the Sections</h4>
+                <h4 className="text-white/70 mb-1 text-sm">Explore the Sections</h4>
                 <p className="text-white/40 text-sm">
                   Open{" "}
                   <span className="text-white/70">
@@ -66,22 +66,13 @@ export function PitchDeckModal({
                 3
               </div>
               <div>
-                <h4 className="text-white/70 mb-1">Experiment!</h4>
+                <h4 className="text-white/70 mb-1 text-sm">Experiment!</h4>
                 <p className="text-white/40 text-sm">
                   All changes happen instantly — move sliders
                   and see what happens in real-time. We use machine-learning libraries to drive the visual tools
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="p-4 bg-white/10 border border-white/10 rounded-lg mt-6">
-            <h4 className="text-white/70 mb-2">Pro Tip</h4>
-            <p className="text-white/40 text-sm leading-relaxed">
-              Start by adjusting the background visuals first, then
-              enable body effects and motion trails. Uploaded videos
-              unlock advanced features like Motion Analysis.
-            </p>
           </div>
         </div>
       ),
@@ -98,7 +89,7 @@ export function PitchDeckModal({
             <div className="space-y-4">
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">Motion Trails</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">Motion Trails</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">Ghost Trail:</span>{" "}
@@ -120,7 +111,7 @@ export function PitchDeckModal({
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">Motion Analysis</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">Motion Analysis</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">Skeleton:</span>{" "}
@@ -138,7 +129,7 @@ export function PitchDeckModal({
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">The Trippy Section</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">The Trippy Section</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">Kaleidoscope:</span>{" "}
@@ -157,7 +148,7 @@ export function PitchDeckModal({
               
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">Grid Background</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">Grid Background</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">Styles:</span>{" "}
@@ -171,7 +162,7 @@ export function PitchDeckModal({
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">Background Atmosphere</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">Background Atmosphere</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">GLSL Shaders:</span>{" "}
@@ -181,7 +172,7 @@ export function PitchDeckModal({
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3">Post Processing</h4>
+                <h4 className="text-white/70 font-sm mb-3 text-sm">Post Processing</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
                     <span className="text-white/70">Film Grain:</span>{" "}
@@ -211,11 +202,10 @@ export function PitchDeckModal({
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-              <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2">
-                <span>💻</span>
+              <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2 text-sm">
                 <span>Desktop / Laptop</span>
               </h4>
-              <div className="space-y-2 text-sm text-white/40">
+              <div className="space-y-2 text-sm text-white/60">
                 <div>✓ All effects work smoothly</div>
                 <div>✓ Crank everything to maximum</div>
                 <div>✓ Combine heavy effects freely</div>
@@ -229,11 +219,10 @@ export function PitchDeckModal({
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-              <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2">
-                <span>📱</span>
+              <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2 text-sm">
                 <span>Mobile / Tablet</span>
               </h4>
-              <div className="space-y-2 text-sm text-white/40">
+              <div className="space-y-2 text-sm text-white/60">
                 <div>⚠ Keep effects moderate</div>
                 <div>⚠ Film Grain under 30%</div>
                 <div>⚠ Ghost Frames: 8-15 max</div>
@@ -248,7 +237,7 @@ export function PitchDeckModal({
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3">
+            <h4 className="text-white/70 font-medium mb-3 text-sm">
               What Slows Things Down
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -271,7 +260,7 @@ export function PitchDeckModal({
           </div>
 
           <div className="bg-white/10 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-2">
+            <h4 className="text-white/70 font-medium mb-2 text-sm">
               Quick Fix for Lag
             </h4>
             <p className="text-white/40 text-sm">
@@ -295,53 +284,10 @@ export function PitchDeckModal({
       content: (
         <div className="space-y-4">
           <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3">
-              ✨ Great Combinations
+            <h4 className="text-white/70 font-medium mb-3 text-sm">
+              Creative Workflow Tips
             </h4>
-            <ul className="space-y-2 text-sm text-white/40">
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Kaleidoscope + Motion Trails
-                </span>{" "}
-                = Mesmerizing mirrored effects
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Grid Background + GLSL Shaders
-                </span>{" "}
-                = Layered visual depth
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Motion Analysis + Ghost Trails
-                </span>{" "}
-                = Technical movement visualization (uploaded videos)
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Blob Tracking + Kaleidoscope
-                </span>{" "}
-                = Abstract motion patterns
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Low Film Grain (10-20%)
-                </span>{" "}
-                = Subtle texture without lag
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3">
-              💡 Creative Workflow
-            </h4>
-            <ul className="space-y-2 text-sm text-white/40">
+            <ul className="space-y-2 text-sm text-white/60">
               <li>
                 <span className="text-white/70">1.</span> Upload a video or enable webcam
               </li>
@@ -361,13 +307,13 @@ export function PitchDeckModal({
           </div>
 
           <div className="bg-white/10 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3">
-              🎯 Troubleshooting
+            <h4 className="text-white/70 font-medium mb-3 text-sm">
+              Troubleshooting
             </h4>
-            <ul className="space-y-2 text-sm text-white/40">
+            <ul className="space-y-2 text-sm text-white/60">
               <li>
                 •{" "}
-                <span className="text-white/70">
+                <span className="text-white/70 ">
                   Camera not working?
                 </span>{" "}
                 Check browser permissions, reload page

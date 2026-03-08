@@ -22,7 +22,7 @@ export function InstructionsModal({
       open={isOpen}
       onOpenChange={handleOpenChange}
       title="Video to Frames Usage Guide"
-      description="Follow these steps to convert your video into printable frame sequences."
+      description="Steps to convert your video into printable frame sequences."
     >
       <div className="w-full h-40 bg-white/10 rounded-md flex flex-col items-center justify-center overflow-hidden">
         <img
@@ -34,15 +34,15 @@ export function InstructionsModal({
       <Separator className="bg-white/10" />
 
       <div className="space-y-3">
-        <h3 className="text-white/80">Quick Start Guide</h3>
+        <h3 className="text-white/80 text-sm">Quick Start Guide</h3>
 
         <div className="flex gap-3">
           <div className="flex items-center justify-center flex-shrink-0 w-[21px] h-[21px] rounded-full bg-white/20 text-white/80">
             <Upload className="size-3" />
           </div>
           <div>
-            <h4 className="text-white/80">1. Upload Your Video</h4>
-            <p className="text-white/50 text-sm">
+            <h4 className="text-white/80 text-sm">1. Upload Your Video</h4>
+            <p className="text-white/60 text-sm">
               Drag and drop any video file or click to browse. Supports MP4, MOV, WebM and more.
             </p>
           </div>
@@ -53,8 +53,8 @@ export function InstructionsModal({
             <Film className="size-3" />
           </div>
           <div>
-            <h4 className="text-white/80">2. Extract Frames</h4>
-            <p className="text-white/50 text-sm">
+            <h4 className="text-white/80 text-sm">2. Extract Frames</h4>
+            <p className="text-white/60 text-sm">
               Choose to extract every Nth frame or specify total frames. Perfect for stop-motion workflows.
             </p>
           </div>
@@ -65,8 +65,8 @@ export function InstructionsModal({
             <Grid3x3 className="size-3" />
           </div>
           <div>
-            <h4 className="text-white/80">3. Configure Layout</h4>
-            <p className="text-white/50 text-sm">
+            <h4 className="text-white/80 text-sm">3. Configure Layout</h4>
+            <p className="text-white/60 text-sm">
               Customize paper size, grid layout, margins, frame numbers, and more advanced options.
             </p>
           </div>
@@ -77,8 +77,8 @@ export function InstructionsModal({
             <Printer className="size-3" />
           </div>
           <div>
-            <h4 className="text-white/80">4. Print or Export</h4>
-            <p className="text-white/50 text-sm">
+            <h4 className="text-white/80 text-sm">4. Print or Export</h4>
+            <p className="text-white/60 text-sm">
               Export as PNG pages or PDF. Print at 100% scale for accurate frame sizing.
             </p>
           </div>
@@ -86,15 +86,6 @@ export function InstructionsModal({
       </div>
 
       <Separator className="bg-white/10" />
-
-      <div className="p-4 bg-white/10 border border-white/10 rounded-lg">
-        <h4 className="text-white/80 mb-2">Tips</h4>
-        <ul className="space-y-1 text-sm text-white/60">
-          <li>• Use registration marks for precise alignment across multiple prints</li>
-          <li>• Convert to black & white for photocopier-friendly prints</li>
-          <li>• Save your favorite configurations as presets for reuse</li>
-        </ul>
-      </div>
     </UsageGuideModal>
   );
 }
