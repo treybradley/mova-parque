@@ -1,13 +1,7 @@
 import { ReactNode, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, MoreVertical, Music, Sparkles, Film, ChevronRight } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
+import { UsageGuideModal } from "@/app/components/UsageGuideModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -216,84 +210,57 @@ export function Sidebar({
       </AnimatePresence>
 
       {/* Explainer Guide Modal */}
-      <Dialog open={isGuideOpen} onOpenChange={setIsGuideOpen}>
-        <DialogContent
-          style={{
-            maxWidth: "600px",
-            maxHeight: "90vh",
-            backgroundColor: "rgba(0, 0, 0, 0.95)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            borderRadius: "8px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-          className="bg-black/95 border-white/10"
-        >
-          <DialogHeader>
-            <DialogTitle className="text-white">
-            Motion Scores Usage Guide
-            </DialogTitle>
-            <DialogDescription className="text-white/60">
-              Learn how to transform video motion into MIDI sequences
-            </DialogDescription>
-          </DialogHeader>
-
-          <div
-            className="space-y-4"
-            style={{
-              marginTop: "16px",
-              overflowY: "auto",
-              paddingRight: "4px",
-            }}
-          >
-            {/* Slide Content */}
-            <div className="space-y-3 min-h-[200px]">
-              <h3 className="text-sm font-medium text-white/70">
-                {slides[currentSlide].title}
-              </h3>
-              <p className="text-sm text-white/50 leading-relaxed">
-                {slides[currentSlide].content}
-              </p>
-            </div>
-
-            {/* Navigation */}
-            {slides.length > 1 && (
-              <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                <div className="flex items-center gap-1">
-                  {slides.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlide(index)}
-                      className={`h-1.5 rounded-full transition-all ${
-                        index === currentSlide
-                          ? 'bg-white/60 w-6'
-                          : 'bg-white/20 w-1.5'
-                      }`}
-                      title={`Slide ${index + 1}`}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center gap-1">
+      <UsageGuideModal
+        open={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title="Motion Scores Usage Guide"
+        description="Learn how to transform video motion into MIDI sequences"
+        footer={
+          slides.length > 1 ? (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-1">
+                {slides.map((_, index) => (
                   <button
-                    onClick={handlePrev}
-                    className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white"
-                    title="Previous"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white"
-                    title="Next"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      index === currentSlide
+                        ? "bg-white/60 w-6"
+                        : "bg-white/20 w-1.5"
+                    }`}
+                    title={`Slide ${index + 1}`}
+                  />
+                ))}
               </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handlePrev}
+                  className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white"
+                  title="Previous"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white"
+                  title="Next"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
+        <div className="space-y-3 min-h-[200px]">
+          <h3 className="text-sm font-medium text-white/70">
+            {slides[currentSlide].title}
+          </h3>
+          <p className="text-sm text-white/50 leading-relaxed">
+            {slides[currentSlide].content}
+          </p>
+        </div>
+      </UsageGuideModal>
     </>
   );
 }

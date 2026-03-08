@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
+import { UsageGuideModal } from "./UsageGuideModal";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -448,91 +442,55 @@ export function PitchDeckModal({
     return null;
   }
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        style={{
-          maxWidth: "600px",
-          maxHeight: "90vh",
-          backgroundColor: "rgba(0, 0, 0, 0.9)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          borderRadius: "var(--radius-lg)",
-          display: "flex",
-          flexDirection: "column",
-        }}
+  const slideFooter = (
+    <div className="flex items-center justify-between w-full">
+      <Button
+        onClick={prevSlide}
+        disabled={currentSlide === 0}
+        variant="outline"
+        size="sm"
+        className="bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 disabled:opacity-30"
       >
-        <DialogHeader>
-          <DialogTitle>
-            <div className="flex items-center gap-2">
-              <div>
-                <h2 className="pt-[0px] pr-[0px] pb-[0px] pl-[0px] text-white/70">
-                  {currentSlideData.title}
-                </h2>
-              </div>
-            </div>
-          </DialogTitle>
-          <DialogDescription className="text-white/40">
-            {currentSlideData.subtitle}
-          </DialogDescription>
-        </DialogHeader>
+        <ChevronLeft size={16} className="mr-1" />
+        Previous
+      </Button>
+      <div className="flex items-center gap-2">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              index === currentSlide
+                ? "bg-white/70 w-8"
+                : "bg-white/20 hover:bg-white/40 w-2"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+      <Button
+        onClick={nextSlide}
+        disabled={currentSlide === slides.length - 1}
+        variant="outline"
+        size="sm"
+        className="bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 disabled:opacity-30"
+      >
+        Next
+        <ChevronRight size={16} className="ml-1" />
+      </Button>
+    </div>
+  );
 
-        <div
-          className="space-y-4"
-          style={{
-            marginTop: "0px",
-            overflowY: "auto",
-            paddingRight: "4px",
-          }}
-        >
-          <Separator className="bg-white/10" />
-
-          {/* Slide content */}
-          <div className="text-white/70">
-            {currentSlideData.content}
-          </div>
-
-          {/* Navigation footer */}
-          <Separator className="bg-white/10" />
-          <div className="flex items-center justify-between pt-2">
-            <Button
-              onClick={prevSlide}
-              disabled={currentSlide === 0}
-              variant="outline"
-              size="sm"
-              className="bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 disabled:opacity-30"
-            >
-              <ChevronLeft size={16} className="mr-1" />
-              Previous
-            </Button>
-
-            <div className="flex items-center gap-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === currentSlide
-                      ? "bg-white/70 w-8"
-                      : "bg-white/20 hover:bg-white/40 w-2"
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-
-            <Button
-              onClick={nextSlide}
-              disabled={currentSlide === slides.length - 1}
-              variant="outline"
-              size="sm"
-              className="bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 disabled:opacity-30"
-            >
-              Next
-              <ChevronRight size={16} className="ml-1" />
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+  return (
+    <UsageGuideModal
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      title={currentSlideData.title}
+      description={currentSlideData.subtitle}
+      footer={slideFooter}
+    >
+      <Separator className="bg-white/10" />
+      <div className="text-white/70">{currentSlideData.content}</div>
+    </UsageGuideModal>
   );
 }
