@@ -1096,6 +1096,8 @@ export function ControlPanel(props: ControlPanelProps) {
               </div>
             </div>
 
+            <div className="border-t border-white/10"></div>
+          
             {/* Blob Tracking - Nested Collapsible */}
             <div className="pt-2">
               <CollapsibleSection
@@ -1785,6 +1787,8 @@ export function ControlPanel(props: ControlPanelProps) {
               </CollapsibleSection>
             </div>
 
+            <div className="border-t border-white/10"></div>
+            
             {/* Background Atmosphere - GLSL Shader Controls */}
             <div className="pt-2">
               <CollapsibleSection

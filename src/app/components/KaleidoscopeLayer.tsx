@@ -147,160 +147,92 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
           animationRef.current = requestAnimationFrame(render);
           return;
         }
-        
-        // Helper function to draw all layers with proper blending
-        const drawLayers = (srcX: number, srcY: number, srcW: number, srcH: number, 
-                           destX: number, destY: number, destW: number, destH: number) => {
-          // Draw background first
+
+        // Helper: draw each layer using its own dimensions for the source rect, so pose/blob
+        // (which may be video resolution) align correctly with body/bg (viewport-aspect).
+        type SourceRect = { x: number; y: number; w: number; h: number };
+        const drawLayers = (
+          getSourceRect: (layerWidth: number, layerHeight: number) => SourceRect,
+          destX: number,
+          destY: number,
+          destW: number,
+          destH: number
+        ) => {
           if (bgValid && bgCanvas) {
+            const r = getSourceRect(bgCanvas.width, bgCanvas.height);
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(bgCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(bgCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
           }
-          
-          // Draw body canvas with blend mode
           if (bodyValid && bodyCanvas) {
-            // Map CSS blend mode to Canvas composite operation
+            const r = getSourceRect(bodyCanvas.width, bodyCanvas.height);
             ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
-            ctx.drawImage(bodyCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
-            ctx.globalCompositeOperation = 'source-over'; // Reset
+            ctx.drawImage(bodyCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
+            ctx.globalCompositeOperation = 'source-over';
           }
-          
-          // Draw pose canvas (after body, before blob)
           if (poseValid && poseCanvas) {
+            const r = getSourceRect(poseCanvas.width, poseCanvas.height);
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(poseCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(poseCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
           }
-          
-          // Draw blob tracking canvas (source-over: stack on top of previous layers)
           if (blobValid && blobCanvas) {
+            const r = getSourceRect(blobCanvas.width, blobCanvas.height);
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(blobCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(blobCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
           }
         };
-        
+
         if (mode === 'horizontal') {
-          // Take bottom half and mirror it to top
+          // Take bottom half of each layer and mirror to top
           const halfH = h / 2;
-          
-          // Use the body effects canvas dimensions as the primary source (it matches video aspect ratio)
-          // Fall back to other canvases if body canvas isn't available
-          let srcW = w; // Default to kaleidoscope canvas width
-          let srcH = h; // Default to kaleidoscope canvas height
-          
-          if (bodyValid && bodyCanvas) {
-            // Use body canvas dimensions directly - it matches the video aspect ratio
-            srcW = bodyCanvas.width;
-            srcH = bodyCanvas.height;
-          } else if (bgValid && bgCanvas) {
-            srcW = bgCanvas.width;
-            srcH = bgCanvas.height;
-          } else if (blobValid && blobCanvas) {
-            srcW = blobCanvas.width;
-            srcH = blobCanvas.height;
-          } else if (poseValid && poseCanvas) {
-            srcW = poseCanvas.width;
-            srcH = poseCanvas.height;
-          }
-          
-          // Draw bottom half normally
-          const bottomHalfH = srcH / 2;
-          drawLayers(0, bottomHalfH, srcW, bottomHalfH, 0, halfH, w, halfH);
-          
-          // Mirror to top half
+          const getBottomHalf = (lw: number, lh: number): SourceRect => ({
+            x: 0,
+            y: lh / 2,
+            w: lw,
+            h: lh / 2,
+          });
+          drawLayers(getBottomHalf, 0, halfH, w, halfH);
           ctx.save();
           ctx.scale(1, -1);
           ctx.translate(0, -halfH);
-          drawLayers(0, bottomHalfH, srcW, bottomHalfH, 0, 0, w, halfH);
+          drawLayers(getBottomHalf, 0, 0, w, halfH);
           ctx.restore();
-          
         } else if (mode === 'vertical') {
-          // Take left half and mirror it to right
+          // Take left half of each layer and mirror to right
           const halfW = w / 2;
-          
-          // Use the body effects canvas dimensions as the primary source (it matches video aspect ratio)
-          // Fall back to other canvases if body canvas isn't available
-          let srcW = w; // Default to kaleidoscope canvas width
-          let srcH = h; // Default to kaleidoscope canvas height
-          
-          if (bodyValid && bodyCanvas) {
-            // Use body canvas dimensions directly - it matches the video aspect ratio
-            srcW = bodyCanvas.width;
-            srcH = bodyCanvas.height;
-          } else if (bgValid && bgCanvas) {
-            srcW = bgCanvas.width;
-            srcH = bgCanvas.height;
-          } else if (blobValid && blobCanvas) {
-            srcW = blobCanvas.width;
-            srcH = blobCanvas.height;
-          } else if (poseValid && poseCanvas) {
-            srcW = poseCanvas.width;
-            srcH = poseCanvas.height;
-          }
-          
-          // Draw left half normally
-          const leftHalfW = srcW / 2;
-          drawLayers(0, 0, leftHalfW, srcH, 0, 0, halfW, h);
-          
-          // Mirror to right half
+          const getLeftHalf = (lw: number, lh: number): SourceRect => ({
+            x: 0,
+            y: 0,
+            w: lw / 2,
+            h: lh,
+          });
+          drawLayers(getLeftHalf, 0, 0, halfW, h);
           ctx.save();
           ctx.translate(w, 0);
           ctx.scale(-1, 1);
-          drawLayers(0, 0, leftHalfW, srcH, 0, 0, halfW, h);
+          drawLayers(getLeftHalf, 0, 0, halfW, h);
           ctx.restore();
-          
         } else if (mode === 'radial') {
-          // 4-way mirror from top-left quadrant
+          // 4-way mirror from top-left quadrant of each layer
           const halfW = w / 2;
           const halfH = h / 2;
-          
-          // Top-left (original) - only use valid canvas dimensions
-          const validWidths = [
-            bgValid ? bgCanvas?.width : null,
-            bodyValid ? bodyCanvas?.width : null,
-            blobValid ? blobCanvas?.width : null,
-            poseValid ? poseCanvas?.width : null
-          ].filter((w): w is number => w !== null && w !== undefined && w > 0);
-          
-          const validHeights = [
-            bgValid ? bgCanvas?.height : null,
-            bodyValid ? bodyCanvas?.height : null,
-            blobValid ? blobCanvas?.height : null,
-            poseValid ? poseCanvas?.height : null
-          ].filter((h): h is number => h !== null && h !== undefined && h > 0);
-          
-          const srcW = validWidths.length > 0 
-            ? Math.max(1, Math.floor(Math.min(...validWidths) / 2))
-            : 0;
-          const srcH = validHeights.length > 0 
-            ? Math.max(1, Math.floor(Math.min(...validHeights) / 2))
-            : 0;
-            
-          if (srcW > 0 && srcH > 0) {
-            drawLayers(0, 0, srcW, srcH, 0, 0, halfW, halfH);
-          }
-          
-          // Top-right (horizontal flip)
+          const getTopLeftQuadrant = (lw: number, lh: number): SourceRect => ({
+            x: 0,
+            y: 0,
+            w: Math.max(1, Math.floor(lw / 2)),
+            h: Math.max(1, Math.floor(lh / 2)),
+          });
+          drawLayers(getTopLeftQuadrant, 0, 0, halfW, halfH);
           ctx.save();
           ctx.scale(-1, 1);
-          if (srcW > 0 && srcH > 0) {
-            drawLayers(0, 0, srcW, srcH, -w, 0, halfW, halfH);
-          }
+          drawLayers(getTopLeftQuadrant, -w, 0, halfW, halfH);
           ctx.restore();
-          
-          // Bottom-left (vertical flip)
           ctx.save();
           ctx.scale(1, -1);
-          if (srcW > 0 && srcH > 0) {
-            drawLayers(0, 0, srcW, srcH, 0, -h, halfW, halfH);
-          }
+          drawLayers(getTopLeftQuadrant, 0, -h, halfW, halfH);
           ctx.restore();
-          
-          // Bottom-right (both flips)
           ctx.save();
           ctx.scale(-1, -1);
-          if (srcW > 0 && srcH > 0) {
-            drawLayers(0, 0, srcW, srcH, -w, -h, halfW, halfH);
-          }
+          drawLayers(getTopLeftQuadrant, -w, -h, halfW, halfH);
           ctx.restore();
         }
       } catch (err) {

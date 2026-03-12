@@ -294,9 +294,72 @@ export function BlobTrackingLayer({ config, videoSource, sharedWebcamVideoRef }:
             }
           } else if (config.boundingBoxShape === 'circle') {
             const radius = Math.max(scaledWidth, scaledHeight) / 2;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.stroke();
+            switch (config.boundingBoxRegionStyle) {
+              case 'frame':
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+              case 'l-frame': {
+                // Four arc segments (corner brackets) with gaps
+                const gap = 0.35;
+                const arcLen = Math.PI / 2 - gap;
+                for (let i = 0; i < 4; i++) {
+                  const start = i * (Math.PI / 2) + gap / 2;
+                  const end = start + arcLen;
+                  ctx.beginPath();
+                  ctx.arc(centerX, centerY, radius, start, end);
+                  ctx.stroke();
+                }
+                break;
+              }
+              case 'x-frame':
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(centerX - radius, centerY - radius);
+                ctx.lineTo(centerX + radius, centerY + radius);
+                ctx.moveTo(centerX + radius, centerY - radius);
+                ctx.lineTo(centerX - radius, centerY + radius);
+                ctx.stroke();
+                break;
+              case 'grid':
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                  const a = (i * Math.PI) / 2;
+                  ctx.moveTo(centerX, centerY);
+                  ctx.lineTo(centerX + radius * Math.cos(a), centerY + radius * Math.sin(a));
+                }
+                for (let i = 0; i < 4; i++) {
+                  const a = Math.PI / 4 + (i * Math.PI) / 2;
+                  ctx.moveTo(centerX, centerY);
+                  ctx.lineTo(centerX + radius * Math.cos(a), centerY + radius * Math.sin(a));
+                }
+                ctx.stroke();
+                break;
+              case 'scope':
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - radius);
+                ctx.lineTo(centerX, centerY + radius);
+                ctx.moveTo(centerX - radius, centerY);
+                ctx.lineTo(centerX + radius, centerY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.1, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+              default:
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
           }
         });
       }
