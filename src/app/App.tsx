@@ -218,6 +218,7 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const recordingEngineRef = useRef<ReturnType<typeof startRecording> | null>(null);
+  const recordingDimensionsRef = useRef<{ width: number; height: number } | null>(null);
   const [exportFrameRate, setExportFrameRate] = useState<ExportFrameRate>(30);
   const [exportQualityPreset, setExportQualityPreset] = useState<ExportQualityPreset>("standard");
   const [signInModalOpen, setSignInModalOpen] = useState(false);
@@ -849,6 +850,7 @@ export default function App() {
         applyWatermark: !usePremium,
       });
       recordingEngineRef.current = handle;
+      recordingDimensionsRef.current = { width: dims.width, height: dims.height };
       setIsRecording(true);
       setRecordingStartTime(Date.now());
     } catch (err) {
@@ -890,6 +892,7 @@ export default function App() {
     } catch (err) {
       console.error("Failed to stop recording:", err);
     } finally {
+      recordingDimensionsRef.current = null;
       setIsRecording(false);
       setRecordingStartTime(null);
     }
@@ -990,6 +993,8 @@ export default function App() {
                 ? videoSource.videoElement
                 : cameraStream
             }
+            isRecording={isRecording}
+            recordingDimensionsRef={recordingDimensionsRef}
           />
 
           {/* Middle layer: Ghost trails and person segmentation with blend mode */}

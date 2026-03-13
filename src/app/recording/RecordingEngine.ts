@@ -118,17 +118,25 @@ export function startRecording(
       const poseCanvas = document.querySelector(
         "canvas.pose-estimation-canvas"
       ) as HTMLCanvasElement | undefined;
+      const gridCanvas = document.querySelector(
+        "canvas.grid-background-layer"
+      ) as HTMLCanvasElement | undefined;
 
       const bgValid = bgCanvas && bgCanvas.width > 1 && bgCanvas.height > 1;
       const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
       const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
       const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
+      const gridValid = gridCanvas && gridCanvas.width > 1 && gridCanvas.height > 1;
 
-      if (!bgValid && !bodyValid && !blobValid && !poseValid) return;
+      if (!bgValid && !bodyValid && !blobValid && !poseValid && !gridValid) return;
 
       if (showBackground && bgValid && bgCanvas) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, 0, 0, destW, destH);
+      }
+      if (gridValid && gridCanvas) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(gridCanvas, 0, 0, gridCanvas.width, gridCanvas.height, 0, 0, destW, destH);
       }
       if (showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
         const vw = rawVideoElement.videoWidth;

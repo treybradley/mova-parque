@@ -5,9 +5,11 @@ interface GridBackgroundLayerProps {
   enabled: boolean;
   config: GridConfig;
   videoSource?: HTMLVideoElement | MediaStream | null; // For aspect ratio matching
+  isRecording?: boolean;
+  recordingDimensionsRef?: React.RefObject<{ width: number; height: number } | null>;
 }
 
-export function GridBackgroundLayer({ enabled, config, videoSource }: GridBackgroundLayerProps) {
+export function GridBackgroundLayer({ enabled, config, videoSource, isRecording = false, recordingDimensionsRef }: GridBackgroundLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
 
@@ -43,8 +45,12 @@ export function GridBackgroundLayer({ enabled, config, videoSource }: GridBackgr
       let canvasHeight: number;
       let shouldCenter = false;
       
-      // Match video aspect ratio (same logic as ShaderLayer)
-      if (videoSource && videoSource instanceof HTMLVideoElement) {
+      // When recording, use export dimensions so grid line width matches in the export (1:1 capture)
+      if (recordingDimensionsRef?.current) {
+        canvasWidth = recordingDimensionsRef.current.width;
+        canvasHeight = recordingDimensionsRef.current.height;
+        shouldCenter = true;
+      } else if (videoSource && videoSource instanceof HTMLVideoElement) {
         const videoWidth = videoSource.videoWidth || 0;
         const videoHeight = videoSource.videoHeight || 0;
         
@@ -128,7 +134,7 @@ export function GridBackgroundLayer({ enabled, config, videoSource }: GridBackgr
         videoSource.removeEventListener('loadedmetadata', handleLoadedMetadata);
       }
     };
-  }, [enabled, config, videoSource]);
+  }, [enabled, config, videoSource, isRecording, recordingDimensionsRef]);
 
   // Handle video source changes and trigger resize
   useEffect(() => {
@@ -145,7 +151,11 @@ export function GridBackgroundLayer({ enabled, config, videoSource }: GridBackgr
       let canvasHeight: number;
       let shouldCenter = false;
       
-      if (videoSource && videoSource instanceof HTMLVideoElement) {
+      if (recordingDimensionsRef?.current) {
+        canvasWidth = recordingDimensionsRef.current.width;
+        canvasHeight = recordingDimensionsRef.current.height;
+        shouldCenter = true;
+      } else if (videoSource && videoSource instanceof HTMLVideoElement) {
         const videoWidth = videoSource.videoWidth || 0;
         const videoHeight = videoSource.videoHeight || 0;
         
@@ -183,7 +193,7 @@ export function GridBackgroundLayer({ enabled, config, videoSource }: GridBackgr
     }, 100);
     
     return () => clearTimeout(timeoutId);
-  }, [videoSource, enabled, config.enabled]);
+  }, [videoSource, enabled, config.enabled, isRecording, recordingDimensionsRef]);
 
   if (
     !enabled ||
