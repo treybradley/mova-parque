@@ -35,7 +35,6 @@ export interface RecordingLayerToggles {
   bodySegmentationEnabled: boolean;
   motionAnalysisEnabled: boolean;
   blobTrackingEnabled: boolean;
-  showBackground: boolean;
   /** When false, recording uses the current-frame-only body canvas (no ghost trails). */
   showGhostTrails: boolean;
 }

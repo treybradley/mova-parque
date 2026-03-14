@@ -130,7 +130,7 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
       try {
         ctx.clearRect(0, 0, w, h);
         
-        // Find shader background (first canvas), body effects canvas, blob tracking canvas, and pose canvas
+        // Find first canvas (grid), body effects canvas, blob tracking canvas, and pose canvas
         const allCanvases = document.querySelectorAll('canvas:not(.kaleidoscope-canvas):not(.film-grain-canvas)');
         const bgCanvas = allCanvases[0] as HTMLCanvasElement | undefined;
         const bodyCanvas = document.querySelector('canvas.body-effects-canvas') as HTMLCanvasElement | undefined;

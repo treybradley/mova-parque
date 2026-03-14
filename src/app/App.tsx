@@ -2,7 +2,6 @@ import { ControlPanel } from "@/app/components/ControlPanel";
 import { SoundPanel } from "@/app/components/SoundPanel";
 import { BodySegmentationLayer } from "@/app/components/BodySegmentationLayer";
 import { RawVideoLayer } from "@/app/components/RawVideoLayer";
-import { ShaderLayer } from "@/app/components/ShaderLayer";
 import { KaleidoscopeLayer } from "@/app/components/KaleidoscopeLayer";
 import { WatermarkLayer } from "@/app/components/WatermarkLayer";
 import { FilmGrainLayer } from "@/app/components/FilmGrainLayer";
@@ -32,11 +31,6 @@ import VideoToFramesApp from "./video-to-frames/VideoToFramesApp";
 import MovaScoreApp from "./mova-score/MovaScoreApp";
 
 type AppMode = 'mova-parque' | 'video-to-frames' | 'mova-score';
-import {
-  getShaderPreset,
-  getDefaultShader,
-  defaultVertexShader,
-} from "./shaders/index";
 import { AudioEngine } from "@/app/audio/AudioEngine";
 import {
   DEFAULT_BLOB_CONFIG,
@@ -66,34 +60,9 @@ function getPaletteFromTimeOfDay(): number {
   return 4; // Kinetic (7pm-11pm)
 }
 
-// Color palettes for different moods
-const palettes = [
-  // Palette 0: Stasis - Cool Blue/Purple
-  ["#1a0f2e", "#2d1b69", "#4a5899", "#7b9eb0", "#b4d4e1"],
-  // Palette 1: Tension - Warm Coral/Pink
-  ["#1a0a0f", "#4a1f2f", "#d4456f", "#ff7b54", "#ffa577"],
-  // Palette 2: Flow - Healing Greens
-  ["#0f1a15", "#1f4a3a", "#2d8659", "#5ab88f", "#9de0c5"],
-  // Palette 3: Drive - Active Amber/Gold
-  ["#1a1108", "#4a3520", "#d48b20", "#ffb847", "#ffe5a0"],
-  // Palette 4: Kinetic - Energetic Sunrise
-  ["#2a0f00", "#ff4400", "#ff7700", "#ffaa00", "#ffdd44"],
-];
-
-// Helper to convert hex color to vec3 (0-1 range)
-function hexToVec3(hex: string): number[] {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  return [r, g, b];
-}
-
 export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('mova-parque');
   const initialPalette = getPaletteFromTimeOfDay();
-  const [activePreset, setActivePreset] = useState(
-    initialPalette.toString(),
-  );
   const [mood, setMood] = useState({
     colorPalette: initialPalette,
     brightness: 0.3,
@@ -105,8 +74,8 @@ export default function App() {
     haziness: 0.8,
     depth: 1.5,
     blendMode: 'normal', // Default to normal
-    noise: 0.042, // Film grain = 42 (displayed as noise * 1000)
-    grainSpeed: 2, // Grain speed = 2
+    noise: 0.0, // Film grain = 42 (displayed as noise * 1000)
+    grainSpeed: 0, // Grain speed = 2
   });
   const [background, setBackground] = useState({
     kaleidoscope: "none", // 'none', 'horizontal', 'vertical', 'radial'
@@ -122,11 +91,10 @@ export default function App() {
     rotation: 0,
     opacity: 1, // grid lines 100% by default
     backgroundColor: "#000000",
-    backgroundOpacity: 0, // background 0% so shader is fully visible by default
+    backgroundOpacity: 0,
   });
   const [camera, setCamera] = useState({
     enabled: false,
-    showBackground: false, // GLSL OFF by default
     showRawVideo: true, // Original Video Background enabled by default
     rawVideoOpacity: 1.0,
   });
@@ -278,67 +246,6 @@ export default function App() {
     }));
   }, [mood.colorPalette]);
 
-  // Shader state with library support - NOW ENABLED BY DEFAULT WITH CLASSIC GRADIENT
-  const defaultShader = getDefaultShader();
-  const [shaderState, setShaderState] = useState({
-    renderMode: "shader-background" as
-      | "disabled"
-      | "shader-only"
-      | "shader-background",
-    currentPresetId: defaultShader.id,
-    currentFragmentShader: defaultShader.fragmentShader,
-    currentVertexShader: defaultVertexShader,
-    uniforms: { ...defaultShader.uniforms },
-    isEditing: false,
-    originalPresetFragment: defaultShader.fragmentShader,
-    originalPresetVertex: defaultVertexShader,
-    compileError: null as string | null,
-  });
-
-  // Update shader uniforms when mood/atmosphere changes
-  useEffect(() => {
-    const palette = palettes[mood.colorPalette];
-    const paletteUniforms = {
-      u_palette0: hexToVec3(palette[0]),
-      u_palette1: hexToVec3(palette[1]),
-      u_palette2: hexToVec3(palette[2]),
-      u_palette3: hexToVec3(palette[3]),
-      u_palette4: hexToVec3(palette[4]),
-    };
-
-    setShaderState((prev) => {
-      // Start with palette uniforms (always needed)
-      const updatedUniforms: { [key: string]: number | number[] } = {
-        ...prev.uniforms,
-        ...paletteUniforms,
-      };
-
-      // Only add other uniforms if they already exist in current uniforms
-      // (meaning the current preset uses them)
-      if ("u_brightness" in prev.uniforms)
-        updatedUniforms.u_brightness = mood.brightness;
-      if ("u_haziness" in prev.uniforms)
-        updatedUniforms.u_haziness = atmosphere.haziness;
-      if ("u_depth" in prev.uniforms)
-        updatedUniforms.u_depth = atmosphere.depth;
-      if ("u_noise" in prev.uniforms)
-        updatedUniforms.u_noise = atmosphere.noise;
-      if ("u_motion" in prev.uniforms)
-        updatedUniforms.u_motion = movement.trailLength;
-
-      return {
-        ...prev,
-        uniforms: updatedUniforms,
-      };
-    });
-  }, [
-    mood.colorPalette,
-    mood.brightness,
-    atmosphere.haziness,
-    atmosphere.depth,
-    movement.trailLength,
-  ]);
-
   // Sound Design State
   const [soundDesign, setSoundDesign] = useState({
     enabled: false,
@@ -458,17 +365,7 @@ export default function App() {
   }, []);
 
   const handleCameraChange = (key: string, value: boolean) => {
-    setCamera((prev) => {
-      const updated = { ...prev, [key]: value };
-
-      // UX fix: When camera is disabled, automatically show background
-      // to prevent black screen
-      if (key === "enabled" && value === false) {
-        updated.showBackground = true;
-      }
-
-      return updated;
-    });
+    setCamera((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleCameraNumberChange = (
@@ -493,14 +390,6 @@ export default function App() {
       const updated = { ...prev, [key]: value };
       return updated;
     });
-  };
-
-  const handlePresetChange = (paletteIndex: string) => {
-    setActivePreset(paletteIndex);
-    setMood((prev) => ({
-      ...prev,
-      colorPalette: parseInt(paletteIndex),
-    }));
   };
 
   // Sound Design Handlers
@@ -550,106 +439,6 @@ export default function App() {
     if (audioEngineRef.current) {
       audioEngineRef.current.setPreset(preset);
     }
-  };
-
-  // Shader Handlers
-  const handleShaderRenderModeChange = (
-    mode: "disabled" | "shader-only" | "shader-background",
-  ) => {
-    setShaderState((prev) => ({ ...prev, renderMode: mode }));
-  };
-
-  const handleShaderUniformChange = (
-    name: string,
-    value: number | number[],
-  ) => {
-    setShaderState((prev) => ({
-      ...prev,
-      uniforms: { ...prev.uniforms, [name]: value },
-    }));
-  };
-
-  const handleShaderCompileError = (error: string | null) => {
-    setShaderState((prev) => ({
-      ...prev,
-      compileError: error,
-    }));
-  };
-
-  // Shader library and editing handlers
-  const handleShaderPresetChange = (presetId: string) => {
-    const preset = getShaderPreset(presetId);
-    if (!preset) return;
-
-    // Get current palette uniforms to preserve them
-    const palette = palettes[mood.colorPalette];
-    const paletteUniforms = {
-      u_palette0: hexToVec3(palette[0]),
-      u_palette1: hexToVec3(palette[1]),
-      u_palette2: hexToVec3(palette[2]),
-      u_palette3: hexToVec3(palette[3]),
-      u_palette4: hexToVec3(palette[4]),
-    };
-
-    // Merge preset uniforms with palette colors
-    // Only include other dynamic uniforms if they exist in the preset's default uniforms
-    const mergedUniforms: { [key: string]: number | number[] } = {
-      ...preset.uniforms,
-      ...paletteUniforms,
-    };
-
-    // Add common uniforms if they're defined in the preset
-    if ("u_brightness" in preset.uniforms)
-      mergedUniforms.u_brightness = mood.brightness;
-    if ("u_haziness" in preset.uniforms)
-      mergedUniforms.u_haziness = atmosphere.haziness;
-    if ("u_depth" in preset.uniforms)
-      mergedUniforms.u_depth = atmosphere.depth;
-    if ("u_noise" in preset.uniforms)
-      mergedUniforms.u_noise = atmosphere.noise;
-    if ("u_motion" in preset.uniforms)
-      mergedUniforms.u_motion = movement.trailLength;
-
-    setShaderState((prev) => ({
-      ...prev,
-      currentPresetId: preset.id,
-      currentFragmentShader: preset.fragmentShader,
-      currentVertexShader: defaultVertexShader,
-      uniforms: mergedUniforms,
-      isEditing: false,
-      originalPresetFragment: preset.fragmentShader,
-      originalPresetVertex: defaultVertexShader,
-      compileError: null,
-    }));
-  };
-
-  const handleShaderCodeChange = (code: string) => {
-    setShaderState((prev) => ({
-      ...prev,
-      currentFragmentShader: code,
-      isEditing: code !== prev.originalPresetFragment,
-    }));
-  };
-
-  const handleVertexShaderCodeChange = (code: string) => {
-    setShaderState((prev) => ({
-      ...prev,
-      currentVertexShader: code,
-      isEditing:
-        code !== prev.originalPresetVertex ||
-        prev.currentFragmentShader !==
-          prev.originalPresetFragment,
-    }));
-  };
-
-  const handleShaderCodeReset = () => {
-    setShaderState((prev) => ({
-      ...prev,
-      currentFragmentShader: prev.originalPresetFragment,
-      currentVertexShader: prev.originalPresetVertex,
-      isEditing: false,
-      compileError: null,
-    }));
   };
 
   // Blob Tracking Handlers
@@ -844,7 +633,6 @@ export default function App() {
           bodySegmentationEnabled: bodySegmentation.enabled,
           motionAnalysisEnabled: motionAnalysis.enabled,
           blobTrackingEnabled: blobTracking.enabled,
-          showBackground: camera.showBackground,
           showGhostTrails: bodyEffects.showGhostTrails,
         },
         applyWatermark: !usePremium,
@@ -866,7 +654,6 @@ export default function App() {
     atmosphere.noise,
     camera.showRawVideo,
     camera.rawVideoOpacity,
-    camera.showBackground,
     bodySegmentation.enabled,
     motionAnalysis.enabled,
     blobTracking.enabled,
@@ -965,26 +752,7 @@ export default function App() {
               : cameraStream
           }
         >
-          {/* Shader background layer - Conditionally visible based on showBackground toggle */}
-          {camera.showBackground && (
-            <ShaderLayer
-              key={`shader-${videoSource.type}-${videoSource.videoElement ? 'upload' : 'webcam'}-${videoSource.metadata?.fileName || 'none'}`}
-              mode={shaderState.renderMode}
-              fragmentShaderCode={
-                shaderState.currentFragmentShader
-              }
-              vertexShaderCode={shaderState.currentVertexShader}
-              uniforms={shaderState.uniforms}
-              onCompileError={handleShaderCompileError}
-              videoSource={
-                videoSource.type === "upload"
-                  ? videoSource.videoElement
-                  : cameraStream
-              }
-            />
-          )}
-
-          {/* Grid background layer - Behind body effects, in front of shader */}
+          {/* Grid background layer - Behind body effects */}
           <GridBackgroundLayer
             enabled={gridBackground.enabled}
             config={gridBackground}
@@ -1090,7 +858,6 @@ export default function App() {
         background={background}
         bodyEffects={bodyEffects}
         camera={camera}
-        shader={shaderState}
         blobTracking={blobTracking}
         gridBackground={gridBackground}
         onMoodChange={handleMoodChange}
@@ -1105,18 +872,10 @@ export default function App() {
         onBodySegmentationChange={handleBodySegmentationChange}
         onCameraChange={handleCameraChange}
         onCameraNumberChange={handleCameraNumberChange}
-        onPresetChange={handlePresetChange}
-        onShaderRenderModeChange={handleShaderRenderModeChange}
-        onShaderUniformChange={handleShaderUniformChange}
-        onShaderPresetChange={handleShaderPresetChange}
-        onShaderCodeChange={handleShaderCodeChange}
-        onVertexShaderCodeChange={handleVertexShaderCodeChange}
-        onShaderCodeReset={handleShaderCodeReset}
         onBlobTrackingChange={handleBlobTrackingChange}
         onGridBackgroundChange={handleGridBackgroundChange}
         motionAnalysis={motionAnalysis}
         onMotionAnalysisChange={handleMotionAnalysisChange}
-        activePreset={activePreset}
         onOpenPitchDeck={() => setIsPitchDeckOpen(true)}
         videoSource={videoSource}
         isVideoUploading={isVideoUploading}

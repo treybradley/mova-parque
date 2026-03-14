@@ -45,6 +45,7 @@ export function startRecording(
     frameRate,
     videoBitsPerSecond = 2_500_000,
     kaleidoscopeMode,
+    grainIntensity,
     showRawVideo,
     rawVideoElement,
     rawVideoOpacity,
@@ -55,7 +56,6 @@ export function startRecording(
     bodySegmentationEnabled,
     motionAnalysisEnabled,
     blobTrackingEnabled,
-    showBackground,
     showGhostTrails,
   } = layerToggles;
 
@@ -69,10 +69,12 @@ export function startRecording(
     throw new Error("Could not get 2d context for recording canvas");
   }
 
-  let intervalId: ReturnType<typeof setInterval> | null = null;
+  let rafId: number | null = null;
   const chunks: Blob[] = [];
   let mediaRecorder: MediaRecorder | null = null;
   let stream: MediaStream | null = null;
+
+  const msPerFrame = 1000 / frameRate;
 
   const captureFrame = () => {
     ctx.clearRect(0, 0, destW, destH);
@@ -84,9 +86,19 @@ export function startRecording(
       kaleidoscopeMode !== "none" &&
       kaleidoscopeCanvas &&
       kaleidoscopeCanvas.width > 1 &&
-      kaleidoscopeCanvas.height > 1 &&
-      !showRawVideo;
+      kaleidoscopeCanvas.height > 1;
     if (useKaleidoscope) {
+      // Draw raw video first (matches live view: raw video under kaleidoscope)
+      if (showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
+        const vw = rawVideoElement.videoWidth;
+        const vh = rawVideoElement.videoHeight;
+        if (vw > 0 && vh > 0) {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = Math.max(0, Math.min(1, rawVideoOpacity));
+          ctx.drawImage(rawVideoElement, 0, 0, vw, vh, 0, 0, destW, destH);
+          ctx.globalAlpha = 1;
+        }
+      }
       ctx.globalCompositeOperation = "source-over";
       ctx.drawImage(
         kaleidoscopeCanvas,
@@ -99,15 +111,20 @@ export function startRecording(
         destW,
         destH
       );
+      // Film grain on top (matches FilmGrainLayer: overlay blend, intensity * 5 opacity)
+      const filmGrainCanvas = document.querySelector("canvas.film-grain-canvas") as HTMLCanvasElement | undefined;
+      if (grainIntensity >= 0.001 && filmGrainCanvas && filmGrainCanvas.width > 1 && filmGrainCanvas.height > 1) {
+        ctx.globalCompositeOperation = "overlay";
+        ctx.globalAlpha = Math.min(1, grainIntensity * 5);
+        ctx.drawImage(filmGrainCanvas, 0, 0, filmGrainCanvas.width, filmGrainCanvas.height, 0, 0, destW, destH);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+      }
       if (applyWatermark) {
         ctx.globalCompositeOperation = "source-over";
         drawLogoWatermarkGrid(ctx, destW, destH, 0.2);
       }
     } else {
-      const allCanvases = document.querySelectorAll(
-        "canvas:not(.kaleidoscope-canvas):not(.film-grain-canvas):not(.watermark-layer-canvas)"
-      );
-      const bgCanvas = allCanvases[0] as HTMLCanvasElement | undefined;
       // When ghost trails are off, use current-frame-only canvas so export has no ghosts
       const bodyCanvas = document.querySelector(
         showGhostTrails ? "canvas.body-effects-canvas" : "canvas.body-export-canvas"
@@ -122,18 +139,13 @@ export function startRecording(
         "canvas.grid-background-layer"
       ) as HTMLCanvasElement | undefined;
 
-      const bgValid = bgCanvas && bgCanvas.width > 1 && bgCanvas.height > 1;
       const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
       const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
       const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
       const gridValid = gridCanvas && gridCanvas.width > 1 && gridCanvas.height > 1;
 
-      if (!bgValid && !bodyValid && !blobValid && !poseValid && !gridValid) return;
+      if (!bodyValid && !blobValid && !poseValid && !gridValid) return;
 
-      if (showBackground && bgValid && bgCanvas) {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, 0, 0, destW, destH);
-      }
       if (gridValid && gridCanvas) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(gridCanvas, 0, 0, gridCanvas.width, gridCanvas.height, 0, 0, destW, destH);
@@ -160,7 +172,15 @@ export function startRecording(
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(blobCanvas, 0, 0, blobCanvas.width, blobCanvas.height, 0, 0, destW, destH);
       }
-
+      // Film grain on top (matches FilmGrainLayer: overlay blend, intensity * 5 opacity)
+      const filmGrainCanvas = document.querySelector("canvas.film-grain-canvas") as HTMLCanvasElement | undefined;
+      if (grainIntensity >= 0.001 && filmGrainCanvas && filmGrainCanvas.width > 1 && filmGrainCanvas.height > 1) {
+        ctx.globalCompositeOperation = "overlay";
+        ctx.globalAlpha = Math.min(1, grainIntensity * 5);
+        ctx.drawImage(filmGrainCanvas, 0, 0, filmGrainCanvas.width, filmGrainCanvas.height, 0, 0, destW, destH);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+      }
       if (applyWatermark) {
         ctx.globalCompositeOperation = "source-over";
         drawLogoWatermarkGrid(ctx, destW, destH, 0.2);
@@ -189,21 +209,30 @@ export function startRecording(
 
   mediaRecorder.start(100);
 
-  const msPerFrame = 1000 / frameRate;
-  intervalId = setInterval(captureFrame, msPerFrame);
+  // Drive capture with rAF so we sample after paint (avoids kaleidoscope flicker in export)
+  let nextCaptureTime = 0;
+  const recordingTick = (now: number) => {
+    if (nextCaptureTime === 0) nextCaptureTime = now;
+    if (now >= nextCaptureTime) {
+      captureFrame();
+      nextCaptureTime += msPerFrame;
+    }
+    rafId = requestAnimationFrame(recordingTick);
+  };
+  rafId = requestAnimationFrame(recordingTick);
 
   return {
     stop: () =>
       new Promise<import("./types").RecordingResult>((resolve, reject) => {
-        if (!intervalId || !mediaRecorder) {
+        if (!rafId || !mediaRecorder) {
           resolve({
             blob: new Blob(chunks, { type: mimeType }),
             extension,
           });
           return;
         }
-        clearInterval(intervalId);
-        intervalId = null;
+        cancelAnimationFrame(rafId);
+        rafId = null;
 
         mediaRecorder!.onstop = () => {
           stream?.getTracks().forEach((t) => t.stop());

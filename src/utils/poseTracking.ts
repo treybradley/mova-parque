@@ -67,7 +67,7 @@ export function calculateDistance(p1: Keypoint, p2: Keypoint): number {
 export function smoothKeypoints(
   keypoints: Keypoint[],
   previousKeypoints: Keypoint[],
-  smoothing: number = 0.7
+  smoothing: number = .5
 ): Keypoint[] {
   if (!previousKeypoints || previousKeypoints.length === 0) return keypoints;
   

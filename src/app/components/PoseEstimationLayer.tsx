@@ -252,7 +252,7 @@ export function PoseEstimationLayer({
     
     // Smooth keypoints with minimal smoothing for maximum responsiveness
     // Lower value = more responsive (less lag), higher value = smoother (more lag)
-    const smoothedKeypoints = smoothKeypoints(keypoints, previousKeypointsRef.current, 0.2);
+    const smoothedKeypoints = smoothKeypoints(keypoints, previousKeypointsRef.current, 0.1);
     
     // Update previousKeypointsRef immediately - render loop will pick it up
     previousKeypointsRef.current = smoothedKeypoints;

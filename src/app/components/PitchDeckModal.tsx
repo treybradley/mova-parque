@@ -162,16 +162,6 @@ export function PitchDeckModal({
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">Background Atmosphere</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">GLSL Shaders:</span>{" "}
-                    Custom shader backgrounds (toggle off Original Video to see)
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                 <h4 className="text-white/70 font-sm mb-3 text-sm">Post Processing</h4>
                 <div className="space-y-2 text-xs">
                   <div className="text-white/40">
@@ -254,7 +244,7 @@ export function PitchDeckModal({
               <div className="text-white/40">
                 <span className="text-white/70">🟢 Light:</span>{" "}
                 Color Palette, Saturation, Brightness,
-                Haziness, GLSL Shaders
+                Haziness
               </div>
             </div>
           </div>
@@ -298,7 +288,7 @@ export function PitchDeckModal({
                 <span className="text-white/70">3.</span> Experiment with Kaleidoscope and Blob Tracking
               </li>
               <li>
-                <span className="text-white/70">4.</span> Change the background visuals first (Grid, GLSL)
+                <span className="text-white/70">4.</span> Change the background visuals first (Grid)
               </li>
               <li>
                 <span className="text-white/70">5.</span> Add or remove grain in the post processing section and export!
@@ -324,13 +314,6 @@ export function PitchDeckModal({
                   Motion Analysis not showing?
                 </span>{" "}
                 Only works with uploaded videos, not webcam
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  GLSL Background not visible?
-                </span>{" "}
-                Toggle off "Original Video Background" first
               </li>
               <li>
                 •{" "}

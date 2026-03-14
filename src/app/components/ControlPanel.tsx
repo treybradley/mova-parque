@@ -24,8 +24,6 @@ import {
 import { useState } from "react";
 import { useIsMobile } from "./ui/use-mobile";
 import { ResponsiveInfoPopover } from "./ui/responsive-info-popover";
-import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
-import { getShaderPreset } from "../shaders/index";
 import { BlobTrackingConfig } from "@/utils/blobTracking";
 import { GridConfig } from "@/utils/gridRenderer";
 import { VideoUpload } from "./VideoUpload";
@@ -62,23 +60,8 @@ interface ControlPanelProps {
   };
   camera: {
     enabled: boolean;
-    showBackground: boolean;
     showRawVideo: boolean;
     rawVideoOpacity: number;
-  };
-  shader: {
-    renderMode:
-      | "disabled"
-      | "shader-only"
-      | "shader-background";
-    currentPresetId: string;
-    currentFragmentShader: string;
-    currentVertexShader: string;
-    uniforms: {
-      [key: string]: number | number[];
-    };
-    compileError: string | null;
-    isEditing: boolean;
   };
   blobTracking: BlobTrackingConfig;
   gridBackground: GridConfig;
@@ -124,18 +107,6 @@ interface ControlPanelProps {
   onBodySegmentationChange: (key: string, value: boolean) => void;
   onCameraChange: (key: string, value: boolean) => void;
   onCameraNumberChange: (key: string, value: number) => void;
-  onPresetChange: (preset: string) => void;
-  onShaderRenderModeChange: (
-    mode: "disabled" | "shader-only" | "shader-background",
-  ) => void;
-  onShaderUniformChange: (
-    name: string,
-    value: number | number[],
-  ) => void;
-  onShaderPresetChange: (presetId: string) => void;
-  onShaderCodeChange: (code: string) => void;
-  onVertexShaderCodeChange: (code: string) => void;
-  onShaderCodeReset: () => void;
   onBlobTrackingChange: (
     key: keyof BlobTrackingConfig,
     value: any,
@@ -145,7 +116,6 @@ interface ControlPanelProps {
     value: number | string | boolean,
   ) => void;
   onMotionAnalysisChange: (key: string, value: any) => void;
-  activePreset: string;
   onOpenPitchDeck: () => void;
   videoSource: {
     type: "webcam" | "upload";
@@ -176,115 +146,9 @@ interface ControlPanelProps {
   onRequestSignIn?: () => void;
 }
 
-const paletteNames = [
-  "Stasis",
-  "Tension",
-  "Flow",
-  "Drive",
-  "Kinetic",
-];
-
-const paletteColors = [
-  ["#2d1b69", "#4a5899", "#7b9eb0"], // Stasis - cool blues
-  ["#4a1f2f", "#d4456f", "#ff7b54"], // Tension - warm coral/pink
-  ["#1f4a3a", "#2d8659", "#5ab88f"], // Flow - healing greens
-  ["#4a3520", "#d48b20", "#ffb847"], // Drive - active amber
-  ["#ff4400", "#ff7700", "#ffaa00"], // Kinetic - energetic sunrise
-];
-
 export function ControlPanel(props: ControlPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const isMobile = useIsMobile();
-
-  // Get current shader preset info
-  const currentPreset = getShaderPreset(
-    props.shader.currentPresetId,
-  );
-
-  // Helper to convert RGB array to hex
-  const rgbToHex = (rgb: number[]) => {
-    const r = Math.round(rgb[0] * 255)
-      .toString(16)
-      .padStart(2, "0");
-    const g = Math.round(rgb[1] * 255)
-      .toString(16)
-      .padStart(2, "0");
-    const b = Math.round(rgb[2] * 255)
-      .toString(16)
-      .padStart(2, "0");
-    return `#${r}${g}${b}`;
-  };
-
-  // Helper to convert hex to RGB array
-  const hexToRgb = (hex: string): number[] => {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    return [r, g, b];
-  };
-
-  // Render uniform control based on type
-  const renderUniformControl = (uniform: any) => {
-    const value = props.shader.uniforms[uniform.name];
-
-    if (uniform.type === "color") {
-      const hexValue = Array.isArray(value)
-        ? rgbToHex(value)
-        : (uniform.default as string);
-
-      return (
-        <div key={uniform.name} className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[12px] text-white/70 font-light">
-              {uniform.label}
-            </span>
-          </div>
-          <input
-            type="color"
-            value={hexValue}
-            onChange={(e) =>
-              props.onShaderUniformChange(
-                uniform.name,
-                hexToRgb(e.target.value),
-              )
-            }
-            className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-          />
-        </div>
-      );
-    }
-
-    // Float/number slider
-    const numValue =
-      typeof value === "number"
-        ? value
-        : (uniform.default as number);
-
-    return (
-      <div key={uniform.name} className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] text-white/70 font-light">
-            {uniform.label}
-          </span>
-          <span className="text-xs text-white/50 font-light">
-            {numValue.toFixed(
-              uniform.step && uniform.step < 0.1 ? 2 : 1,
-            )}
-          </span>
-        </div>
-        <Slider
-          value={[numValue]}
-          onValueChange={(val) =>
-            props.onShaderUniformChange(uniform.name, val[0])
-          }
-          min={uniform.min || 0}
-          max={uniform.max || 1}
-          step={uniform.step || 0.01}
-          className="slider-custom"
-        />
-      </div>
-    );
-  };
 
   // Tooltip content for Body & Trails
   const bodyTrailsTooltip = (
@@ -1055,7 +919,7 @@ export function ControlPanel(props: ControlPanelProps) {
 
           {/* ========== SECTION 3: TRIPPY SECTION ========== */}
           <CollapsibleSection
-            title="The Trippy Section"
+            title="The Secrete Section"
             defaultOpen={false}
           >
             {/* Kaleidoscope */}
@@ -1786,138 +1650,7 @@ export function ControlPanel(props: ControlPanelProps) {
                 </div>
               </CollapsibleSection>
             </div>
-
-            <div className="border-t border-white/10"></div>
-            
-            {/* Background Atmosphere - GLSL Shader Controls */}
-            <div className="pt-2">
-              <CollapsibleSection
-                title="Background Atmosphere"
-                defaultOpen={false}  // Collapsed by default (easter egg)
-              >
-                {/* Enable GLSL Background Toggle */}
-                <div className="space-y-2 pb-4 border-b border-white/10">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[12px] text-white/70 font-light">
-                          Enable GLSL Background
-                        </span>
-                        <Switch
-                          checked={props.camera.showBackground}
-                          onCheckedChange={(value) =>
-                            props.onCameraChange("showBackground", value)
-                          }
-                        />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className="bg-black/95 backdrop-blur-xl border border-white/20 text-white/70 max-w-[200px] "
-                    >
-                      <p className="text-xs">
-                        Toggle off "Original Video Background" to see the GLSL background
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
-                {/* Shader Preset Selection */}
-                {props.camera.showBackground && (
-                  <>
-                    <div className="space-y-2 pb-4 border-b border-white/10">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[12px] text-white/70 font-light">
-                          Shader Preset
-                        </span>
-                      </div>
-                      <select
-                        value={props.shader.currentPresetId}
-                        onChange={(e) =>
-                          props.onShaderPresetChange(e.target.value)
-                        }
-                        className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-sm text-white/90 font-light appearance-none cursor-pointer hover:border-white/40 transition-all focus:outline-none focus:border-white/60"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' fill-opacity='0.5' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                          backgroundRepeat: "no-repeat",
-                          backgroundPosition: "right 12px center",
-                        }}
-                      >
-                        <option value="classic-gradient">
-                          Classic Gradient
-                        </option>
-                        <option value="atmospheric-haze">
-                          Atmospheric Haze
-                        </option>
-                        <option value="liquid-gradient">
-                          Liquid Gradient
-                        </option>
-                        <option value="plasma-flow">Plasma Flow</option>
-                        <option value="chromatic-ripple">
-                          Chromatic Ripple
-                        </option>
-                      </select>
-                    </div>
-
-                    {/* Visual Palette Preset Selector */}
-                    <div className="space-y-2 pb-4 border-b border-white/10">
-                      <Label className="text-xs font-normal tracking-wider text-white/60 uppercase text-[11px] underline">
-                        Visual Palette
-                      </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {paletteNames.map((name, index) => (
-                          <button
-                            key={index}
-                            onClick={() =>
-                              props.onPresetChange(index.toString())
-                            }
-                            className={`relative rounded-lg overflow-hidden border-2 transition-all h-10 group ${
-                              props.activePreset === index.toString()
-                                ? "border-white/50 shadow-lg shadow-white/20"
-                                : "border-white/10 hover:border-white/30"
-                            }`}
-                            title={name}
-                          >
-                            {/* Gradient background */}
-                            <div className="absolute inset-0 flex">
-                              {paletteColors[index].map((color, i) => (
-                                <div
-                                  key={i}
-                                  className="flex-1 transition-all group-hover:scale-105"
-                                  style={{ backgroundColor: color }}
-                                />
-                              ))}
-                            </div>
-                            {/* Label */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-[11px] font-light text-white bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md">
-                                {name}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Shader Uniforms - Preset-specific Parameters */}
-                    {currentPreset &&
-                      currentPreset.uniformMeta &&
-                      currentPreset.uniformMeta.length > 0 && (
-                        <>
-                          {currentPreset.uniformMeta
-                            .filter(
-                              (u) =>
-                                !u.name.startsWith("u_palette") &&
-                                u.name !== "u_time" &&
-                                u.name !== "u_resolution"
-                            )
-                            .map(renderUniformControl)}
-                        </>
-                      )}
-                  </>
-                )}
-              </CollapsibleSection>
-            </div>
+          
           </CollapsibleSection>
 
           {/* Visual Separator */}
