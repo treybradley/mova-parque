@@ -130,20 +130,21 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
       try {
         ctx.clearRect(0, 0, w, h);
         
-        // Find first canvas (grid), body effects canvas, blob tracking canvas, and pose canvas
+        // Find first canvas (grid), depth layer, body effects, blob tracking, pose
         const allCanvases = document.querySelectorAll('canvas:not(.kaleidoscope-canvas):not(.film-grain-canvas)');
         const bgCanvas = allCanvases[0] as HTMLCanvasElement | undefined;
+        const depthCanvas = document.querySelector('canvas.depth-layer-canvas') as HTMLCanvasElement | undefined;
         const bodyCanvas = document.querySelector('canvas.body-effects-canvas') as HTMLCanvasElement | undefined;
         const blobCanvas = document.querySelector('canvas.blob-tracking-canvas') as HTMLCanvasElement | undefined;
         const poseCanvas = document.querySelector('canvas.pose-estimation-canvas') as HTMLCanvasElement | undefined;
         
-        // Validate canvases
         const bgValid = bgCanvas && bgCanvas.width > 1 && bgCanvas.height > 1;
+        const depthValid = depthCanvas && depthCanvas.width > 1 && depthCanvas.height > 1;
         const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
         const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
         const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
         
-        if (!bgValid && !bodyValid && !blobValid && !poseValid) {
+        if (!bgValid && !depthValid && !bodyValid && !blobValid && !poseValid) {
           animationRef.current = requestAnimationFrame(render);
           return;
         }
@@ -162,6 +163,11 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
             const r = getSourceRect(bgCanvas.width, bgCanvas.height);
             ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(bgCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
+          }
+          if (depthValid && depthCanvas) {
+            const r = getSourceRect(depthCanvas.width, depthCanvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(depthCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
           }
           if (bodyValid && bodyCanvas) {
             const r = getSourceRect(bodyCanvas.width, bodyCanvas.height);

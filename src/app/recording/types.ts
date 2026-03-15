@@ -37,6 +37,8 @@ export interface RecordingLayerToggles {
   blobTrackingEnabled: boolean;
   /** When false, recording uses the current-frame-only body canvas (no ghost trails). */
   showGhostTrails: boolean;
+  /** When true, depth layer is drawn as base and raw video is skipped. */
+  depthEnabled: boolean;
 }
 
 export interface StartRecordingOptions {

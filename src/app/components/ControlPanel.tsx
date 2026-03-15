@@ -115,6 +115,13 @@ interface ControlPanelProps {
     key: keyof GridConfig,
     value: number | string | boolean,
   ) => void;
+  depthAnything?: {
+    enabled: boolean;
+    style: "depthMap" | "heatmap" | "xray";
+    intensity: number;
+    depthRange: [number, number];
+  };
+  onDepthAnythingChange?: (key: string, value: unknown) => void;
   onMotionAnalysisChange: (key: string, value: any) => void;
   onOpenPitchDeck: () => void;
   videoSource: {
@@ -919,7 +926,7 @@ export function ControlPanel(props: ControlPanelProps) {
 
           {/* ========== SECTION 3: TRIPPY SECTION ========== */}
           <CollapsibleSection
-            title="The Secrete Section"
+            title="More F***ing Processing (!)"
             defaultOpen={false}
           >
             {/* Kaleidoscope */}
@@ -961,7 +968,89 @@ export function ControlPanel(props: ControlPanelProps) {
             </div>
 
             <div className="border-t border-white/10"></div>
-          
+
+            {/* Depth Anything - Nested Collapsible */}
+            {props.depthAnything !== undefined && props.onDepthAnythingChange && (() => {
+              const depth = props.depthAnything!;
+              return (
+              <div className="pt-2">
+                <CollapsibleSection
+                  title="Depth Anything"
+                  defaultOpen={false}
+                >
+                  <div className="space-y-4 pb-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-white/70 font-light">
+                        Enable Depth
+                      </span>
+                      <Switch
+                        checked={depth.enabled}
+                        onCheckedChange={(value) =>
+                          props.onDepthAnythingChange?.("enabled", value)
+                        }
+                      />
+                    </div>
+                    {depth.enabled && (
+                      <>
+                        <div className="space-y-2">
+                          <span className="text-[12px] text-white/70 font-light block">
+                            Style
+                          </span>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(
+                              [
+                                ["depthMap", "Depth Map"],
+                                ["heatmap", "Heatmap"],
+                                ["xray", "X-Ray"],
+                              ] as const
+                            ).map(([mode, label]) => (
+                              <button
+                                key={mode}
+                                onClick={() =>
+                                  props.onDepthAnythingChange?.("style", mode)
+                                }
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-light transition-all ${
+                                  depth.style === mode
+                                    ? "bg-white/20 text-white border border-white/30"
+                                    : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <span className="text-[12px] text-white/70 font-light block">
+                            Depth range
+                          </span>
+                          <div className="flex justify-between text-[10px] text-white/50">
+                            <span>Near: {depth.depthRange[0].toFixed(2)}</span>
+                            <span>Far: {depth.depthRange[1].toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            value={depth.depthRange}
+                            onValueChange={([min, max]) =>
+                              props.onDepthAnythingChange?.("depthRange", [min, max])
+                            }
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            minStepsBetweenThumbs={0.1}
+                            className="slider-custom"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+              );
+            })()}
+            
+            {/* Visual Separator */}
+            <div className="border-t border-white/10"></div>
+
             {/* Blob Tracking - Nested Collapsible */}
             <div className="pt-2">
               <CollapsibleSection

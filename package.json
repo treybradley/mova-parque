@@ -59,6 +59,7 @@
     "lucide-react": "0.487.0",
     "midi-writer-js": "^3.1.1",
     "motion": "12.23.24",
+    "onnxruntime-web": "^1.24.3",
     "next-themes": "0.4.6",
     "react-day-picker": "8.10.1",
     "react-dnd": "16.0.1",

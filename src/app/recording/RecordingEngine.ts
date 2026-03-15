@@ -57,6 +57,7 @@ export function startRecording(
     motionAnalysisEnabled,
     blobTrackingEnabled,
     showGhostTrails,
+    depthEnabled,
   } = layerToggles;
 
   const applyWatermark = options.applyWatermark ?? false;
@@ -88,8 +89,8 @@ export function startRecording(
       kaleidoscopeCanvas.width > 1 &&
       kaleidoscopeCanvas.height > 1;
     if (useKaleidoscope) {
-      // Draw raw video first (matches live view: raw video under kaleidoscope)
-      if (showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
+      // Draw raw video first only when depth is off (when depth on, kaleidoscope already has depth as base)
+      if (!depthEnabled && showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
         const vw = rawVideoElement.videoWidth;
         const vh = rawVideoElement.videoHeight;
         if (vw > 0 && vh > 0) {
@@ -138,19 +139,27 @@ export function startRecording(
       const gridCanvas = document.querySelector(
         "canvas.grid-background-layer"
       ) as HTMLCanvasElement | undefined;
+      const depthCanvas = document.querySelector(
+        "canvas.depth-layer-canvas"
+      ) as HTMLCanvasElement | undefined;
 
       const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
       const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
       const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
       const gridValid = gridCanvas && gridCanvas.width > 1 && gridCanvas.height > 1;
+      const depthValid = depthCanvas && depthCanvas.width > 1 && depthCanvas.height > 1;
 
-      if (!bodyValid && !blobValid && !poseValid && !gridValid) return;
+      if (!bodyValid && !blobValid && !poseValid && !gridValid && !depthValid) return;
 
       if (gridValid && gridCanvas) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(gridCanvas, 0, 0, gridCanvas.width, gridCanvas.height, 0, 0, destW, destH);
       }
-      if (showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
+      if (depthEnabled && depthValid && depthCanvas) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(depthCanvas, 0, 0, depthCanvas.width, depthCanvas.height, 0, 0, destW, destH);
+      }
+      if (!depthEnabled && showRawVideo && rawVideoElement && rawVideoElement.readyState >= 2) {
         const vw = rawVideoElement.videoWidth;
         const vh = rawVideoElement.videoHeight;
         if (vw > 0 && vh > 0) {

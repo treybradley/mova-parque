@@ -7,6 +7,7 @@ import { WatermarkLayer } from "@/app/components/WatermarkLayer";
 import { FilmGrainLayer } from "@/app/components/FilmGrainLayer";
 import { BlobTrackingLayer } from "@/app/components/BlobTrackingLayer";
 import { GridBackgroundLayer } from "@/app/components/GridBackgroundLayer";
+import { DepthLayer } from "@/app/components/DepthLayer";
 import { PoseEstimationLayer } from "@/app/components/PoseEstimationLayer";
 import { MotionAnalysisOverlay } from "@/app/components/MotionAnalysisOverlay";
 import { PitchDeckModal } from "@/app/components/PitchDeckModal";
@@ -130,6 +131,9 @@ export default function App() {
   // Initialize the video element
   const sharedWebcamVideoRef = useRef<HTMLVideoElement | null>(null);
   
+  // When true, webcam <video> has ref set and has valid dimensions (so DepthLayer can start its loop)
+  const [webcamVideoReady, setWebcamVideoReady] = useState(false);
+
   useEffect(() => {
     // Update video element with stream (element is now in DOM via React ref)
     if (sharedWebcamVideoRef.current && cameraStream) {
@@ -138,7 +142,8 @@ export default function App() {
       // Only set srcObject if it's different (avoid reload)
       if (video.srcObject !== cameraStream) {
         video.srcObject = cameraStream;
-        
+        setWebcamVideoReady(false);
+
         // Wait for metadata to load before playing
         const handleLoadedMetadata = () => {
           video.play().catch(err => {
@@ -147,6 +152,7 @@ export default function App() {
             }
           });
           video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          setWebcamVideoReady(true);
         };
         
         video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -155,10 +161,14 @@ export default function App() {
         video.play().catch(() => {
           // Ignore - will retry after loadedmetadata
         });
+      } else if (video.videoWidth > 0 && video.videoHeight > 0) {
+        setWebcamVideoReady(true);
       }
-    } else if (sharedWebcamVideoRef.current && !cameraStream) {
-      // Clear stream when camera is turned off
-      sharedWebcamVideoRef.current.srcObject = null;
+    } else {
+      setWebcamVideoReady(false);
+      if (sharedWebcamVideoRef.current && !cameraStream) {
+        sharedWebcamVideoRef.current.srcObject = null;
+      }
     }
   }, [cameraStream]);
 
@@ -181,6 +191,10 @@ export default function App() {
   });
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [placeholderLoaded, setPlaceholderLoaded] = useState(false);
+
+  useEffect(() => {
+    if (videoSource.type !== "webcam") setWebcamVideoReady(false);
+  }, [videoSource.type]);
 
   // Recording & Export state (mova-parque only)
   const [isRecording, setIsRecording] = useState(false);
@@ -235,6 +249,26 @@ export default function App() {
   // Blob tracking state
   const [blobTracking, setBlobTracking] =
     useState<BlobTrackingConfig>(DEFAULT_BLOB_CONFIG);
+
+  // Depth Anything (Secret Section)
+  const [depthAnything, setDepthAnything] = useState({
+    enabled: false,
+    style: "depthMap" as "depthMap" | "heatmap" | "xray",
+    intensity: 0.7,
+    depthRange: [0, 1] as [number, number],
+  });
+  const handleDepthAnythingChange = useCallback(
+    (key: string, value: unknown) => {
+      setDepthAnything((prev) => {
+        if (key === "enabled") return { ...prev, enabled: value as boolean };
+        if (key === "style") return { ...prev, style: value as "depthMap" | "heatmap" | "xray" };
+        if (key === "intensity") return { ...prev, intensity: value as number };
+        if (key === "depthRange") return { ...prev, depthRange: value as [number, number] };
+        return prev;
+      });
+    },
+    []
+  );
 
   // Update blob tracking colors when mood changes
   useEffect(() => {
@@ -634,6 +668,7 @@ export default function App() {
           motionAnalysisEnabled: motionAnalysis.enabled,
           blobTrackingEnabled: blobTracking.enabled,
           showGhostTrails: bodyEffects.showGhostTrails,
+          depthEnabled: depthAnything.enabled,
         },
         applyWatermark: !usePremium,
       });
@@ -658,6 +693,7 @@ export default function App() {
     motionAnalysis.enabled,
     blobTracking.enabled,
     bodyEffects.showGhostTrails,
+    depthAnything.enabled,
   ]);
 
   const handleStopRecording = useCallback(async () => {
@@ -765,6 +801,18 @@ export default function App() {
             recordingDimensionsRef={recordingDimensionsRef}
           />
 
+          {/* Depth Anything layer - base when enabled (replaces raw video) */}
+          <DepthLayer
+            videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
+            sharedWebcamVideoRef={sharedWebcamVideoRef}
+            config={depthAnything}
+            hasVideo={
+              (videoSource.type === "upload" && videoSource.videoElement != null) ||
+              (videoSource.type === "webcam" && cameraStream != null)
+            }
+            webcamVideoReady={webcamVideoReady}
+          />
+
           {/* Middle layer: Ghost trails and person segmentation with blend mode */}
           {bodySegmentation.enabled && (
             <BodySegmentationLayer
@@ -808,8 +856,8 @@ export default function App() {
             romBgColor={motionAnalysis.romBgColor}
           />
 
-          {/* Raw video layer - Only for uploaded videos (webcam is handled separately in App.tsx) */}
-          {videoSource.type === "upload" && videoSource.videoElement && (
+          {/* Raw video layer - hidden when Depth Anything is on (depth is the base) */}
+          {videoSource.type === "upload" && videoSource.videoElement && !depthAnything.enabled && (
             <RawVideoLayer
               videoSource={videoSource.videoElement}
               opacity={camera.showRawVideo ? camera.rawVideoOpacity : 0}
@@ -874,6 +922,8 @@ export default function App() {
         onCameraNumberChange={handleCameraNumberChange}
         onBlobTrackingChange={handleBlobTrackingChange}
         onGridBackgroundChange={handleGridBackgroundChange}
+        depthAnything={depthAnything}
+        onDepthAnythingChange={handleDepthAnythingChange}
         motionAnalysis={motionAnalysis}
         onMotionAnalysisChange={handleMotionAnalysisChange}
         onOpenPitchDeck={() => setIsPitchDeckOpen(true)}
@@ -959,20 +1009,20 @@ export default function App() {
       </Dialog>
 
       {/* Video element for webcam - MUST be in DOM for TensorFlow.js to work */}
-      {/* Used for both processing (hidden) and display (visible when camera.showRawVideo is true) */}
+      {/* Hidden when Depth Anything is on (depth layer is the base instead) */}
       {cameraStream && (
         <video
           ref={sharedWebcamVideoRef}
           className="pointer-events-none z-[2]"
           style={{
-            visibility: camera.showRawVideo ? 'visible' : 'hidden',
+            visibility: camera.showRawVideo && !depthAnything.enabled ? 'visible' : 'hidden',
             position: 'fixed',
             top: 0,
             left: 0,
             width: '100vw',
             height: '100vh',
             objectFit: 'cover', // Fill screen, crop edges if needed (matches body segmentation behavior)
-            opacity: camera.showRawVideo ? camera.rawVideoOpacity : 0,
+            opacity: camera.showRawVideo && !depthAnything.enabled ? camera.rawVideoOpacity : 0,
           }}
           playsInline
           muted
