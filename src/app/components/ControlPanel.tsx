@@ -926,7 +926,7 @@ export function ControlPanel(props: ControlPanelProps) {
 
           {/* ========== SECTION 3: TRIPPY SECTION ========== */}
           <CollapsibleSection
-            title="More F***ing Processing (!)"
+            title="More Processing"
             defaultOpen={false}
           >
             {/* Kaleidoscope */}

@@ -108,7 +108,7 @@ export function RawVideoLayer({ videoSource, opacity, enabled }: RawVideoLayerPr
     >
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full"
+        className="raw-video-display absolute inset-0 w-full h-full"
         style={{
           opacity,
           objectFit: 'contain',

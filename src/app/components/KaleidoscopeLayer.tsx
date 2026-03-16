@@ -137,14 +137,16 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
         const bodyCanvas = document.querySelector('canvas.body-effects-canvas') as HTMLCanvasElement | undefined;
         const blobCanvas = document.querySelector('canvas.blob-tracking-canvas') as HTMLCanvasElement | undefined;
         const poseCanvas = document.querySelector('canvas.pose-estimation-canvas') as HTMLCanvasElement | undefined;
+        const rawVideo = document.querySelector('video.raw-video-display') as HTMLVideoElement | undefined;
         
         const bgValid = bgCanvas && bgCanvas.width > 1 && bgCanvas.height > 1;
         const depthValid = depthCanvas && depthCanvas.width > 1 && depthCanvas.height > 1;
         const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
         const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
         const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
+        const rawValid = rawVideo && rawVideo.videoWidth > 1 && rawVideo.videoHeight > 1;
         
-        if (!bgValid && !depthValid && !bodyValid && !blobValid && !poseValid) {
+        if (!bgValid && !depthValid && !bodyValid && !blobValid && !poseValid && !rawValid) {
           animationRef.current = requestAnimationFrame(render);
           return;
         }
@@ -163,6 +165,12 @@ export function KaleidoscopeLayer({ mode, blendMode, children, videoSource }: Ka
             const r = getSourceRect(bgCanvas.width, bgCanvas.height);
             ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(bgCanvas, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
+          }
+          // Raw video layer – treat like a background source so it is also mirrored
+          if (rawValid && rawVideo) {
+            const r = getSourceRect(rawVideo.videoWidth, rawVideo.videoHeight);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(rawVideo, r.x, r.y, r.w, r.h, destX, destY, destW, destH);
           }
           if (depthValid && depthCanvas) {
             const r = getSourceRect(depthCanvas.width, depthCanvas.height);
