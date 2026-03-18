@@ -16,313 +16,183 @@ export function PitchDeckModal({
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    // Slide 1: Quick Start
+    // Slide 1: Filming tips
     {
-      title: "Usage Guide",
-      subtitle: "Tips and tricks to get up and running",
+      title: "Filming Tips",
+      subtitle: "Get better results from your video",
       content: (
-        <div className="space-y-8">
-          <p className="text-sm leading-relaxed text-white/90">
-            A real-time visual system that creates atmospheric
-            effects and responds to movement through your webcam
-            or uploaded videos.
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-white/60">
+            The best clips are designed for body segmentation + motion analysis.
           </p>
 
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex items-center justify-center flex-shrink-0 w-[21px] h-[21px] rounded-full bg-white/20 text-white/70 text-xs">
-                1
-              </div>
-              <div>
-                <h4 className="text-white/70 mb-1 text-sm">Choose Your Video Source</h4>
-                <p className="text-white/40 text-sm">
-                  Upload a video file or use your{" "}
-                  <span className="text-white/70">webcam</span>{" "}
-                  for real-time effects
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="flex items-center justify-center flex-shrink-0 w-[21px] h-[21px] rounded-full bg-white/20 text-white/70 text-xs">
-                2
-              </div>
-              <div>
-                <h4 className="text-white/70 mb-1 text-sm">Explore the Sections</h4>
-                <p className="text-white/40 text-sm">
-                  Open{" "}
-                  <span className="text-white/70">
-                    Motion Trails, Motion Analysis,
-                  </span>{" "}
-                  <span className="text-white/70">The Trippy Section</span>,{" "}
-                  <span className="text-white/70">Grid Background</span>,{" "}
-                  and <span className="text-white/70">Post Processing</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="flex items-center justify-center flex-shrink-0 w-[21px] h-[21px] rounded-full bg-white/20 text-white/70 text-xs">
-                3
-              </div>
-              <div>
-                <h4 className="text-white/70 mb-1 text-sm">Experiment!</h4>
-                <p className="text-white/40 text-sm">
-                  All changes happen instantly — move sliders
-                  and see what happens in real-time. We use machine-learning libraries to drive the visual tools
-                </p>
-              </div>
-            </div>
+          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <ul className="space-y-2 text-sm text-white/60">
+              <li>Good lighting on the subject</li>
+              <li>Camera stays still (tripod preferred)</li>
+              <li>Only one subject at a time</li>
+              <li>Subject is fully in frame</li>
+              <li>Simple background / clear contrast</li>
+              <li>Minimize occlusions (avoid blocking the subject)</li>
+            </ul>
           </div>
         </div>
       ),
     },
 
-    // Slide 2: Understanding Controls
+    // Slide 2: Performance + troubleshooting
     {
-      title: "Understanding Controls",
-      subtitle: "What Everything Does",
+      title: "Performance",
+      subtitle: "Troubleshoot lag & missing effects",
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left Column */}
-            <div className="space-y-4">
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">Motion Trails</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">Ghost Trail:</span>{" "}
-                    Motion echo intensity
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Ghost Frames:</span>{" "}
-                    Number of trail frames (3-90)
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Ghost Decay:</span>{" "}
-                    How quickly trails fade
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Live Person Visibility:</span>{" "}
-                    Current frame opacity
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">Motion Analysis</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">Skeleton:</span>{" "}
-                    Pose estimation overlay (uploaded videos only)
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Joint Angles:</span>{" "}
-                    Display joint measurements
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">ROM:</span>{" "}
-                    Range of motion tracking
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">The Trippy Section</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">Kaleidoscope:</span>{" "}
-                    Mirror effects (none, horizontal, vertical, radial)
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Blob Tracking:</span>{" "}
-                    Motion detection with bounding boxes & connections
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-4">
-              
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">Grid Background</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">Styles:</span>{" "}
-                    Square, Isometric, Polar, Dots
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Customizable:</span>{" "}
-                    Size, color, opacity, line width
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="text-white/70 font-sm mb-3 text-sm">Post Processing</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="text-white/40">
-                    <span className="text-white/70">Film Grain:</span>{" "}
-                    Texture intensity
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Grain Speed:</span>{" "}
-                    Animation speed
-                  </div>
-                  <div className="text-white/40">
-                    <span className="text-white/70">Blend Mode:</span>{" "}
-                    Normal, Multiply, Screen, Overlay, etc.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-
-    // Slide 3: Performance Tips
-    {
-      title: "Performance Tips",
-      subtitle: "Mobile vs Desktop",
-      content: (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-              <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2 text-sm">
-                <span>Desktop / Laptop</span>
-              </h4>
-              <div className="space-y-2 text-sm text-white/60">
-                <div>✓ All effects work smoothly</div>
-                <div>✓ Crank everything to maximum</div>
-                <div>✓ Combine heavy effects freely</div>
-                <div>✓ Use high Ghost Frames (20-90)</div>
-                <div>✓ Motion Analysis works great</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10 text-white/40 text-sm">
-                Desktop can handle it all — experiment without
-                limits!
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
 
             <div className="bg-white/5 border border-white/10 rounded-lg p-4">
               <h4 className="text-white/70 font-medium mb-3 flex items-center gap-2 text-sm">
-                <span>Mobile / Tablet</span>
+                <span>Desktop is preferred, but if using Mobile / Tablet:</span>
               </h4>
               <div className="space-y-2 text-sm text-white/60">
-                <div>⚠ Keep effects moderate</div>
-                <div>⚠ Film Grain under 30%</div>
-                <div>⚠ Ghost Frames: 8-15 max</div>
-                <div>⚠ Motion Analysis not available</div>
+                <div>⚠ Keep effects moderate for smooth playback</div>
+                <div>⚠ Film Grain can be heavy (use less)</div>
                 <div>⚠ Expect battery drain & heat</div>
               </div>
-              <div className="mt-4 pt-4 border-t border-white/10 text-white/40 text-sm">
-                Less is more on mobile — prioritize smoothness
-                over maximum effects.
-              </div>
             </div>
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-lg p-4">
             <h4 className="text-white/70 font-medium mb-3 text-sm">
-              What Slows Things Down
+            Quick fixes + Troubleshooting
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="text-white/40">
-                <span className="text-white/70">🔴 Heavy:</span>{" "}
-                Motion Analysis, High Ghost Frames, Blob Tracking,
-                Film Grain
-              </div>
-              <div className="text-white/40">
-                <span className="text-white/70">🟡 Medium:</span>{" "}
-                Ghost Trail effects, Kaleidoscope modes,
-                Grid Background
-              </div>
-              <div className="text-white/40">
-                <span className="text-white/70">🟢 Light:</span>{" "}
-                Color Palette, Saturation, Brightness,
-                Haziness
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-2 text-sm">
-              Quick Fix for Lag
-            </h4>
-            <p className="text-white/40 text-sm">
-              Reduce{" "}
-              <span className="text-white/70">Ghost Frames</span>{" "}
-              to 10, turn off{" "}
-              <span className="text-white/70">Film Grain</span>,{" "}
-              disable{" "}
-              <span className="text-white/70">Blob Tracking</span>{" "}
-              if not needed. This fixes most performance issues.
-            </p>
+            <ul className="space-y-2 text-sm text-white/60">
+            <li>
+              If experiencing lag, reduce <span className="text-white/70">Ghost Frames</span>, turn off{" "}
+              <span className="text-white/70">Film Grain</span>, and disable{" "}
+              <span className="text-white/70">Blob Tracking</span>
+              </li>
+              <li>
+                <span className="text-white/70">Camera issues?</span> Check browser permissions and reload.
+              </li>
+              <li>
+                <span className="text-white/70">Motion Analysis</span> (skeleton, joint angles) works with uploaded videos only, not webcam. For more, try{" "}
+                <a
+                  href="https://mova-mvp-dev-01.vercel.app/open-move"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/70 underline underline-offset-2 hover:text-white"
+                >
+                  Mova Atlética (beta)
+                </a>
+                .
+              </li>
+            </ul>
           </div>
         </div>
       ),
     },
 
-    // Slide 4: Tips & Tricks
+    // Slide 3: Understanding controls
     {
-      title: "Tips & Tricks",
-      subtitle: "Getting the Best Results",
+      title: "Understanding Controls",
+      subtitle: "What each section changes",
       content: (
         <div className="space-y-4">
-          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3 text-sm">
-              Creative Workflow Tips
-            </h4>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li>
-                <span className="text-white/70">1.</span> Upload a video or enable webcam
-              </li>
-              <li>
-                  <span className="text-white/70">2.</span> Tune Motion Trails and Motion Analysis effects first (turn them off if wanted)
-                </li>
-              <li>
-                <span className="text-white/70">3.</span> Experiment with Kaleidoscope and Blob Tracking
-              </li>
-              <li>
-                <span className="text-white/70">4.</span> Change the background visuals first (Grid)
-              </li>
-              <li>
-                <span className="text-white/70">5.</span> Add or remove grain in the post processing section and export!
-              </li>
-            </ul>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">Body Trails</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Body Segmentation:</span> Enable/disable body tracking
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Show Ghost Trails:</span> Toggle the trail overlay
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Ghost Trail / Frames / Decay:</span> Trail look & persistence
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Live Person Visibility:</span> Current silhouette opacity
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Visibility (Fallback):</span> Base visibility when minimal effects
+                </div>
+              </div>
+            </div>
 
-          <div className="bg-white/10 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white/70 font-medium mb-3 text-sm">
-              Troubleshooting
-            </h4>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li>
-                •{" "}
-                <span className="text-white/70 ">
-                  Camera not working?
-                </span>{" "}
-                Check browser permissions, reload page
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Motion Analysis not showing?
-                </span>{" "}
-                Only works with uploaded videos, not webcam
-              </li>
-              <li>
-                •{" "}
-                <span className="text-white/70">
-                  Performance issues?
-                </span>{" "}
-                Lower Ghost Frames, disable heavy effects
-              </li>
-            </ul>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">Motion Analysis</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Enable Motion Analysis:</span> Turn pose tracking on/off
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Show Skeleton:</span> Pose estimation overlay
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Show Joint Angles:</span> Angle labels on the skeleton
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Show ROM:</span> Range of motion tracking
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">More Visual Processing</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Kaleidoscope:</span> Mirror effects
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Depth Anything:</span> Depth-based visuals
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Blob Tracking:</span> Motion detection with connections
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">Grid Background</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Styles:</span> Square / Isometric / Polar / Dots
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Customize:</span> size, colors, line width & opacity
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">Post Processing</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Film Grain:</span> Texture intensity
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Grain Speed:</span> Animation speed
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Blend Mode:</span> How noise blends with the scene
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white/70 mb-3 text-sm">Record &amp; Export</h4>
+              <div className="space-y-2 text-xs">
+                <div className="text-white/40">
+                  <span className="text-white/70">Frame rate:</span> Export FPS
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Quality:</span> Standard / High / Max
+                </div>
+                <div className="text-white/40">
+                  <span className="text-white/70">Record / Stop:</span> Start and end your capture
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ),

@@ -161,7 +161,7 @@ export function ControlPanel(props: ControlPanelProps) {
   const bodyTrailsTooltip = (
     <div className="space-y-2 text-white">
       <p className="font-semibold text-white text-xs mb-2">
-        Motion Trails Controls:
+        Body Trails Controls:
       </p>
       <div className="space-y-1.5 text-[10px] leading-relaxed">
         <p>
@@ -225,12 +225,12 @@ export function ControlPanel(props: ControlPanelProps) {
                   Mova Parque
                 </h1>
                 <p className="text-xs text-white/40 leading-relaxed mt-0">
-                  Realtime graphics tools driven by movement.{" "}
+                  Realtime graphics tools driven by movement. For best results, please{" "}
                   <button
                     onClick={props.onOpenPitchDeck}
                     className="text-[12px] font-thin text-white/60 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white/60 transition-all"
                   >
-                    Read our usage guide.
+                    read our usage guide.
                   </button>
                 </p>
               </div>
@@ -389,21 +389,6 @@ export function ControlPanel(props: ControlPanelProps) {
             {/* Visual Separator */}
             <div className="border-t border-white/10"></div>
 
-            {/* Body Segmentation Toggle */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Body Segmentation
-                </span>
-                <Switch
-                  checked={props.bodySegmentation.enabled}
-                  onCheckedChange={(value) =>
-                    props.onBodySegmentationChange("enabled", value)
-                  }
-                />
-              </div>
-            </div>
-
             {/* Show Raw Video - Only visible when source is available */}
             {((props.videoSource.type === "upload" && props.videoSource.metadata) || props.cameraStream) && (
               <div className="space-y-2">
@@ -432,194 +417,209 @@ export function ControlPanel(props: ControlPanelProps) {
 
           {/* ========== SECTION 3: BODY & TRAILS ========== */}
           <CollapsibleSection
-            title="Motion Trails"
+            title="Body Trails"
             defaultOpen={false}
           >
             {/* Section description and info button */}
             <div className="pb-0 space-y-3">
               <p className="text-xs text-white/50 leading-relaxed">
-                Control motion trail persistence, aura effects,
-                and body silhouette appearance.
+                Control the look/feel of the body trails.
               </p>
               <ResponsiveInfoPopover
                 content={bodyTrailsTooltip}
               />
             </div>
 
-            {/* Show Ghost Trails Toggle */}
+            {/* Body Segmentation Toggle (controls dependent trail settings below) */}
             <div className="flex items-center justify-between pt-0">
               <span className="text-[12px] text-white/70 font-light">
-                Show Ghost Trails
+                Body Segmentation
               </span>
               <Switch
-                checked={props.bodyEffects.showGhostTrails}
+                checked={props.bodySegmentation.enabled}
                 onCheckedChange={(value) =>
-                  props.onBodyEffectsChange("showGhostTrails", value)
+                  props.onBodySegmentationChange("enabled", value)
                 }
               />
             </div>
 
-            {/* Ghost Trail */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Ghost Trail
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.bodyEffects.ghostTrail * 100,
-                  )}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.ghostTrail]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "ghostTrail",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="slider-custom"
-              />
-            </div>
+            {props.bodySegmentation.enabled && (
+              <>
+                {/* Show Ghost Trails Toggle */}
+                <div className="flex items-center justify-between pt-0">
+                  <span className="text-[12px] text-white/70 font-light">
+                    Show Ghost Trails
+                  </span>
+                  <Switch
+                    checked={props.bodyEffects.showGhostTrails}
+                    onCheckedChange={(value) =>
+                      props.onBodyEffectsChange("showGhostTrails", value)
+                    }
+                  />
+                </div>
 
-            {/* Ghost Frames */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Ghost Frames
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(props.bodyEffects.ghostFrames)}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.ghostFrames]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "ghostFrames",
-                    value[0],
-                  )
-                }
-                min={3}
-                max={90}
-                step={1}
-                className="slider-custom"
-              />
-            </div>
+                {/* Ghost Trail */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Ghost Trail
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(
+                        props.bodyEffects.ghostTrail * 100,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.ghostTrail]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "ghostTrail",
+                        value[0],
+                      )
+                    }
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="slider-custom"
+                  />
+                </div>
 
-            {/* Ghost Decay */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Ghost Decay
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.bodyEffects.ghostDecay * 100,
-                  )}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.ghostDecay]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "ghostDecay",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="slider-custom"
-              />
-            </div>
+                {/* Ghost Frames */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Ghost Frames
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(props.bodyEffects.ghostFrames)}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.ghostFrames]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "ghostFrames",
+                        value[0],
+                      )
+                    }
+                    min={3}
+                    max={90}
+                    step={1}
+                    className="slider-custom"
+                  />
+                </div>
 
-            {/* Ghost Speed */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Ghost Speed
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.bodyEffects.ghostSpeed * 100,
-                  )}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.ghostSpeed]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "ghostSpeed",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="slider-custom"
-              />
-            </div>
+                {/* Ghost Decay */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Ghost Decay
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(
+                        props.bodyEffects.ghostDecay * 100,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.ghostDecay]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "ghostDecay",
+                        value[0],
+                      )
+                    }
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="slider-custom"
+                  />
+                </div>
 
-            {/* Live Person Visibility */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Live Person Visibility
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.bodyEffects.livePersonVisibility *
-                      100,
-                  )}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.livePersonVisibility]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "livePersonVisibility",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="slider-custom"
-              />
-            </div>
+                {/* Ghost Speed */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Ghost Speed
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(
+                        props.bodyEffects.ghostSpeed * 100,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.ghostSpeed]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "ghostSpeed",
+                        value[0],
+                      )
+                    }
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="slider-custom"
+                  />
+                </div>
 
+                {/* Live Person Visibility */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Live Person Visibility
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(
+                        props.bodyEffects.livePersonVisibility *
+                          100,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.livePersonVisibility]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "livePersonVisibility",
+                        value[0],
+                      )
+                    }
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="slider-custom"
+                  />
+                </div>
 
-            {/* Visibility */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Visibility (Fallback)
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.bodyEffects.visibility * 100,
-                  )}
-                </span>
-              </div>
-              <Slider
-                value={[props.bodyEffects.visibility]}
-                onValueChange={(value) =>
-                  props.onBodyEffectsChange(
-                    "visibility",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="slider-custom"
-              />
-            </div>
+                {/* Visibility */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-white/70 font-light">
+                      Visibility (Fallback)
+                    </span>
+                    <span className="text-xs text-white/50 font-light">
+                      {Math.round(
+                        props.bodyEffects.visibility * 100,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[props.bodyEffects.visibility]}
+                    onValueChange={(value) =>
+                      props.onBodyEffectsChange(
+                        "visibility",
+                        value[0],
+                      )
+                    }
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="slider-custom"
+                  />
+                </div>
+              </>
+            )}
 
           </CollapsibleSection>
 
@@ -926,7 +926,7 @@ export function ControlPanel(props: ControlPanelProps) {
 
           {/* ========== SECTION 3: TRIPPY SECTION ========== */}
           <CollapsibleSection
-            title="More Processing"
+            title="More Visual Processing"
             defaultOpen={false}
           >
             {/* Kaleidoscope */}
