@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { TrackingSettings, VisualSettings, SoundSettings, TrackingMode, BoxType, LineStyle, CentroidType, SynthType, ScaleType } from '@/app/mova-score/types';
 import { Label } from './ui/label';
 import { Slider } from './ui/slider';
@@ -17,6 +18,84 @@ interface ControlPanelProps {
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+function normalizeHex(input: string): string | null {
+  const t = input.trim();
+  if (!t) return null;
+  const m = t.match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) {
+    h = `${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+  }
+  return `#${h.toLowerCase()}`;
+}
+
+function HexColorInput({
+  value,
+  onChange,
+  fallback = '#000000',
+}: {
+  value: string | undefined;
+  onChange: (hex: string) => void;
+  fallback?: string;
+}) {
+  const resolved = value || fallback;
+  const [text, setText] = useState(resolved);
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) {
+      setText(resolved);
+    }
+  }, [resolved]);
+
+  const commit = () => {
+    const next = normalizeHex(text);
+    if (next) {
+      onChange(next);
+      setText(next);
+    } else {
+      setText(resolved);
+    }
+  };
+
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <input
+        type="color"
+        value={resolved}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setText(e.target.value);
+        }}
+        className="h-10 w-12 shrink-0 cursor-pointer rounded border border-white/20 bg-transparent"
+      />
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        spellCheck={false}
+        autoComplete="off"
+        placeholder="#rrggbb"
+        className="min-w-0 flex-1 rounded border border-white/15 bg-white/5 px-2 py-2 font-mono text-xs text-white/90 outline-none placeholder:text-white/30 focus:border-white/30"
+        aria-label="Hex color value"
+      />
+    </div>
+  );
+}
+
 export function ControlPanel({
   trackingSettings,
   visualSettings,
@@ -27,7 +106,19 @@ export function ControlPanel({
 }: ControlPanelProps) {
   
   const updateTracking = (partial: Partial<TrackingSettings>) => {
-    onTrackingSettingsChange({ ...trackingSettings, ...partial });
+    const next = { ...trackingSettings, ...partial };
+    const MIN_SIZE_GAP = 400;
+    if (next.minBlobSize >= next.maxBlobSize) {
+      if ("minBlobSize" in partial) {
+        next.maxBlobSize = Math.min(15_000, next.minBlobSize + MIN_SIZE_GAP);
+      } else {
+        next.minBlobSize = Math.max(80, next.maxBlobSize - MIN_SIZE_GAP);
+      }
+    }
+    next.tolerance = Math.min(0.35, Math.max(0.02, next.tolerance));
+    next.minBlobSize = Math.min(2000, Math.max(80, Math.round(next.minBlobSize)));
+    next.maxBlobSize = Math.min(15_000, Math.max(500, Math.round(next.maxBlobSize)));
+    onTrackingSettingsChange(next);
   };
 
   const updateVisual = (partial: Partial<VisualSettings>) => {
@@ -73,17 +164,11 @@ export function ControlPanel({
               {trackingSettings.mode === 'color' && (
                 <div className="space-y-2">
                   <Label className="text-xs font-normal text-white/60">Target Color</Label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="color"
-                      value={trackingSettings.targetColor || '#ff0000'}
-                      onChange={(e) => updateTracking({ targetColor: e.target.value })}
-                      className="w-12 h-10 rounded border cursor-pointer"
-                    />
-                    <span className="text-sm text-white/40">
-                      {trackingSettings.targetColor || '#ff0000'}
-                    </span>
-                  </div>
+                  <HexColorInput
+                    value={trackingSettings.targetColor}
+                    fallback="#9a8058"
+                    onChange={(hex) => updateTracking({ targetColor: hex })}
+                  />
                 </div>
               )}
 
@@ -91,56 +176,56 @@ export function ControlPanel({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-normal text-white/60">Tolerance: {trackingSettings.tolerance.toFixed(2)}</Label>
-                  {trackingSettings.tolerance > 0.3 && (
-                    <span className={`text-xs ${trackingSettings.tolerance > 0.5 ? 'text-red-400' : 'text-yellow-400'}`}>
-                      {trackingSettings.tolerance > 0.5 ? 'High performance impact' : 'May reduce performance'}
+                  {trackingSettings.tolerance > 0.22 && (
+                    <span className={`text-xs ${trackingSettings.tolerance > 0.28 ? 'text-red-400' : 'text-yellow-400'}`}>
+                      {trackingSettings.tolerance > 0.28 ? 'High performance impact' : 'May reduce performance'}
                     </span>
                   )}
                 </div>
                 <Slider
                   value={[trackingSettings.tolerance]}
                   onValueChange={([value]) => updateTracking({ tolerance: value })}
-                  min={0}
-                  max={0.8}
+                  min={0.02}
+                  max={0.35}
                   step={0.01}
                 />
-                <p className="text-xs text-white/40">Higher values detect more but may exceed 30 blob limit</p>
+                <p className="text-xs text-white/40">Narrower range keeps detection faster (max 30 blobs)</p>
               </div>
 
               {/* Min Blob Size */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-normal text-white/60">Min Blob Size: {trackingSettings.minBlobSize}</Label>
-                  {trackingSettings.minBlobSize < 100 && (
+                  {trackingSettings.minBlobSize < 120 && (
                     <span className="text-xs text-yellow-400">May produce many blobs</span>
                   )}
                 </div>
                 <Slider
                   value={[trackingSettings.minBlobSize]}
                   onValueChange={([value]) => updateTracking({ minBlobSize: value })}
-                  min={10}
-                  max={1000}
+                  min={80}
+                  max={2000}
                   step={10}
                 />
-                <p className="text-xs text-white/40">Lower values = more blobs (max 30 total)</p>
+                <p className="text-xs text-white/40">Higher minimum reduces noise and CPU work</p>
               </div>
 
               {/* Max Blob Size */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-normal text-white/60">Max Blob Size: {trackingSettings.maxBlobSize}</Label>
-                  {trackingSettings.maxBlobSize > 20000 && (
-                    <span className="text-xs text-yellow-400">Large blobs may impact performance</span>
+                  {trackingSettings.maxBlobSize > 12000 && (
+                    <span className="text-xs text-yellow-400">Large blobs cost more to merge</span>
                   )}
                 </div>
                 <Slider
                   value={[trackingSettings.maxBlobSize]}
                   onValueChange={([value]) => updateTracking({ maxBlobSize: value })}
-                  min={1000}
-                  max={50000}
+                  min={500}
+                  max={15000}
                   step={100}
                 />
-                <p className="text-xs text-white/40">Higher values = larger blobs (max 30 total)</p>
+                <p className="text-xs text-white/40">Caps flood-fill cost per region (max 30 blobs)</p>
               </div>
 
               {/* Visual Overlays */}
@@ -182,15 +267,11 @@ export function ControlPanel({
 
                     <div className="space-y-2">
                       <Label className="text-xs font-normal text-white/60">Color</Label>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="color"
-                          value={visualSettings.boxColor}
-                          onChange={(e) => updateVisual({ boxColor: e.target.value })}
-                          className="w-12 h-10 rounded border cursor-pointer"
-                        />
-                        <span className="text-sm text-white/40">{visualSettings.boxColor}</span>
-                      </div>
+                      <HexColorInput
+                        value={visualSettings.boxColor}
+                        fallback="#949494"
+                        onChange={(hex) => updateVisual({ boxColor: hex })}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -250,15 +331,11 @@ export function ControlPanel({
 
                     <div className="space-y-2">
                       <Label className="text-xs font-normal text-white/60">Color</Label>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="color"
-                          value={visualSettings.connectionColor}
-                          onChange={(e) => updateVisual({ connectionColor: e.target.value })}
-                          className="w-12 h-10 rounded border cursor-pointer"
-                        />
-                        <span className="text-sm text-white/40">{visualSettings.connectionColor}</span>
-                      </div>
+                      <HexColorInput
+                        value={visualSettings.connectionColor}
+                        fallback="#b89d72"
+                        onChange={(hex) => updateVisual({ connectionColor: hex })}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -319,15 +396,11 @@ export function ControlPanel({
 
                     <div className="space-y-2">
                       <Label className="text-xs font-normal text-white/60">Color</Label>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="color"
-                          value={visualSettings.centroidColor}
-                          onChange={(e) => updateVisual({ centroidColor: e.target.value })}
-                          className="w-12 h-10 rounded border cursor-pointer"
-                        />
-                        <span className="text-sm text-white/40">{visualSettings.centroidColor}</span>
-                      </div>
+                      <HexColorInput
+                        value={visualSettings.centroidColor}
+                        fallback="#b7cdc7"
+                        onChange={(hex) => updateVisual({ centroidColor: hex })}
+                      />
                     </div>
 
                     <div className="space-y-2">

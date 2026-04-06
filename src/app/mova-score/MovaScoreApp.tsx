@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { VideoSource } from './components/VideoSource';
-import { VideoCanvas } from './components/VideoCanvas';
+import { VideoCanvas, type RecordingCaptureRefState } from './components/VideoCanvas';
 import { ControlPanel } from './components/ControlPanel';
 import { Timeline } from './components/Timeline';
 import { Sidebar } from './components/sidebar';
 import { AnimatedGradient } from './components/animated-gradient';
 import { GridPattern } from './components/grid-pattern';
 import { FilmGrain } from './components/film-grain';
-import { TrackingSettings, VisualSettings, SoundSettings, RecordingState, BlobFrame } from './types';
+import { TrackingSettings, VisualSettings, SoundSettings, RecordingState } from './types';
 import { generateMIDIFromBlobs } from './utils/midiGenerator';
 import { downloadMIDIFile } from './utils/midiExporter';
 import { Button } from './components/ui/button';
@@ -40,12 +40,16 @@ export default function MovaScoreApp({
     height: number;
   } | null>(null);
 
+  const recordingCaptureRef = useRef<RecordingCaptureRefState | null>(null);
+  const [liveRecordingFrameCount, setLiveRecordingFrameCount] = useState(0);
+  const lastTimelineTimeEmitRef = useRef(0);
+
   const [trackingSettings, setTrackingSettings] = useState<TrackingSettings>({
-    mode: 'edge',
-    tolerance: 0.06,
-    minBlobSize: 150,
-    maxBlobSize: 1000,
-    targetColor: '#ff0000'
+    mode: 'color',
+    tolerance: 0.08,
+    minBlobSize: 200,
+    maxBlobSize: 6000,
+    targetColor: '#9a8058'
   });
 
   const [visualSettings, setVisualSettings] = useState<VisualSettings>({
@@ -57,13 +61,13 @@ export default function MovaScoreApp({
     
     showConnections: true,
     connectionLineStyle: 'dotted',
-    connectionColor: '#707066',
-    connectionWeight: 1,
+    connectionColor: '#b89d72',
+    connectionWeight: 3,
     connectionOpacity: 1,
     
     showCentroids: true,
     centroidType: 'cross',
-    centroidColor: '#00e1ff',
+    centroidColor: '#b7cdc7',
     centroidSize: 6,
     centroidOpacity: 1
   });
@@ -204,7 +208,8 @@ export default function MovaScoreApp({
   });
 
   const handleStartRecording = () => {
-    // Clear previous recording and start new
+    recordingCaptureRef.current = { active: true, frames: [] };
+    setLiveRecordingFrameCount(0);
     setRecordingState({
       isRecording: true,
       blobFrames: [],
@@ -215,40 +220,47 @@ export default function MovaScoreApp({
         mapping: soundSettings
       }
     });
-    
-    // Start video playback if not already playing
+
     if (!isPlaying) {
       setIsPlaying(true);
     }
   };
 
   const handleStopRecording = () => {
-    if (!recordingState.isRecording) return;
+    setRecordingState((prev) => {
+      if (!prev.isRecording) return prev;
 
-    const duration = videoElement?.currentTime || 0;
-    const videoSize = {
-      width: videoElement?.videoWidth || 1,
-      height: videoElement?.videoHeight || 1
-    };
+      const cap = recordingCaptureRef.current;
+      const frames = cap?.frames.slice() ?? [];
+      if (cap) {
+        cap.active = false;
+      }
 
-    // Generate MIDI notes from recorded blob frames
-    const midiNotes = generateMIDIFromBlobs(
-      recordingState.blobFrames,
-      soundSettings,
-      videoSize
-    );
+      const duration = videoElement?.currentTime || 0;
+      const videoSize = {
+        width: videoElement?.videoWidth || 1,
+        height: videoElement?.videoHeight || 1
+      };
 
-    setRecordingState({
-      ...recordingState,
-      isRecording: false,
-      midiNotes,
-      duration
+      const midiNotes = generateMIDIFromBlobs(frames, soundSettings, videoSize);
+
+      console.log(
+        `✅ Recording stopped - ${frames.length} frames, ${midiNotes.length} MIDI notes`
+      );
+
+      return {
+        ...prev,
+        isRecording: false,
+        blobFrames: frames,
+        midiNotes,
+        duration
+      };
     });
-    
-    console.log(`✅ Recording stopped - ${recordingState.blobFrames.length} frames, ${midiNotes.length} MIDI notes`);
   };
 
   const handleClearRecording = () => {
+    recordingCaptureRef.current = null;
+    setLiveRecordingFrameCount(0);
     setRecordingState({
       isRecording: false,
       blobFrames: [],
@@ -256,15 +268,6 @@ export default function MovaScoreApp({
       duration: 0,
       settingsSnapshot: null
     });
-  };
-
-  const handleBlobFrameCapture = (frame: BlobFrame) => {
-    if (recordingState.isRecording) {
-      setRecordingState(prev => ({
-        ...prev,
-        blobFrames: [...prev.blobFrames, frame]
-      }));
-    }
   };
 
   const handleExportMIDI = () => {
@@ -288,10 +291,21 @@ export default function MovaScoreApp({
 
   useEffect(() => {
     if (videoElement) {
+      const TIMELINE_TIME_MS = 100;
+
       const handleTimeUpdate = () => {
+        const now = performance.now();
+        if (now - lastTimelineTimeEmitRef.current >= TIMELINE_TIME_MS) {
+          lastTimelineTimeEmitRef.current = now;
+          setCurrentTime(videoElement.currentTime);
+        }
+      };
+
+      const handleSeeked = () => {
+        lastTimelineTimeEmitRef.current = performance.now();
         setCurrentTime(videoElement.currentTime);
       };
-      
+
       const handleLoadedMetadata = () => {
         // Webcam streams have Infinity duration, handle it
         const duration = videoElement.duration;
@@ -321,6 +335,7 @@ export default function MovaScoreApp({
       };
       
       videoElement.addEventListener('timeupdate', handleTimeUpdate);
+      videoElement.addEventListener('seeked', handleSeeked);
       videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
       videoElement.addEventListener('durationchange', handleDurationChange);
       
@@ -334,6 +349,7 @@ export default function MovaScoreApp({
       
       return () => {
         videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+        videoElement.removeEventListener('seeked', handleSeeked);
         videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
         videoElement.removeEventListener('durationchange', handleDurationChange);
       };
@@ -458,8 +474,8 @@ export default function MovaScoreApp({
               trackingSettings={trackingSettings}
               visualSettings={visualSettings}
               soundSettings={soundSettings}
-              isRecording={recordingState.isRecording}
-              onBlobFrameCapture={handleBlobFrameCapture}
+              recordingCaptureRef={recordingCaptureRef}
+              onRecordingFrameCount={setLiveRecordingFrameCount}
             />
           </div>
         ) : (
@@ -511,6 +527,7 @@ export default function MovaScoreApp({
         >
           <Timeline
             recordingState={recordingState}
+            liveRecordingFrameCount={liveRecordingFrameCount}
             onStartRecording={handleStartRecording}
             onStopRecording={handleStopRecording}
             onClearRecording={handleClearRecording}

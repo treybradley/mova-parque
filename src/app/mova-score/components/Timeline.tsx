@@ -13,6 +13,8 @@ import {
 
 interface TimelineProps {
   recordingState: RecordingState;
+  /** Live frame count while recording (React state is not updated every frame). */
+  liveRecordingFrameCount?: number;
   onStartRecording: () => void;
   onStopRecording: () => void;
   onClearRecording: () => void;
@@ -26,6 +28,7 @@ const NOTE_MIN_WIDTH = 2;
 
 export function Timeline({
   recordingState,
+  liveRecordingFrameCount = 0,
   onStartRecording,
   onStopRecording,
   onClearRecording,
@@ -43,6 +46,11 @@ export function Timeline({
     setZoomLevel((prev) => Math.min(prev * 1.5, 10));
   const handleZoomOut = () =>
     setZoomLevel((prev) => Math.max(prev / 1.5, 1));
+
+  const hasValidDuration =
+    typeof videoDuration === "number" &&
+    isFinite(videoDuration) &&
+    videoDuration > 0;
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -82,16 +90,6 @@ export function Timeline({
       : 0;
 
     if (duration === 0 || !isFinite(duration)) {
-      ctx.fillStyle = "#666";
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        videoDuration === Infinity 
-          ? "Live stream - Record to generate timeline"
-          : "Waiting for video...",
-        width / 2,
-        height / 2,
-      );
       return;
     }
 
@@ -183,16 +181,6 @@ export function Timeline({
           ctx.strokeRect(x, noteY, noteWidth, noteHeight);
         });
       });
-    } else if (recordingState.isRecording) {
-      // Show recording indicator
-      ctx.fillStyle = "#666";
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        "Recording...",
-        zoomedWidth / 2,
-        tracksAreaHeight / 2,
-      );
     }
 
     // Draw playhead (synced with video currentTime)
@@ -241,6 +229,15 @@ export function Timeline({
   ]);
 
   const hasRecording = recordingState.blobFrames.length > 0;
+
+  const showRecordingOverlay =
+    isExpanded &&
+    hasValidDuration &&
+    recordingState.isRecording &&
+    recordingState.midiNotes.length === 0;
+
+  const showNoTimelineOverlay = isExpanded && !hasValidDuration;
+  const isLiveStreamWait = videoDuration === Infinity;
 
   return (
     <div
@@ -332,11 +329,12 @@ export function Timeline({
         {/* Stats */}
         <div className="ml-auto text-sm text-white/40 font-mono flex items-center gap-4">
           {recordingState.isRecording && (
-            <span className="text-red-500 animate-pulse">
-              ● REC
-            </span>
+            <>
+              <span className="text-red-500 animate-pulse">● REC</span>
+              <span className="text-xs">Frames: {liveRecordingFrameCount}</span>
+            </>
           )}
-          {hasRecording && (
+          {hasRecording && !recordingState.isRecording && (
             <>
               <span className="text-xs">
                 Frames: {recordingState.blobFrames.length}
@@ -355,7 +353,7 @@ export function Timeline({
       {/* Timeline Canvas - Only visible when expanded */}
       {isExpanded && (
         <div
-          className="flex-1 bg-black/80 overflow-hidden"
+          className="relative flex-1 overflow-hidden bg-black/80"
           ref={containerRef}
           onWheel={handleWheel}
         >
@@ -363,9 +361,51 @@ export function Timeline({
             ref={canvasRef}
             width={1200}
             height={240}
-            className="w-full h-full"
+            className="h-full w-full"
             style={{ imageRendering: "crisp-edges" }}
           />
+
+          {showNoTimelineOverlay && (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center px-6"
+              aria-live="polite"
+            >
+              <div className="max-w-sm text-center">
+                <p className="text-[11px] font-normal uppercase tracking-wider text-white/50">
+                  {isLiveStreamWait
+                    ? "Live stream"
+                    : "Timeline"}
+                </p>
+                <p className="mt-1.5 text-xs font-normal leading-relaxed text-white/35">
+                  {isLiveStreamWait
+                    ? "Record MIDI to generate a note timeline from motion."
+                    : "Load a video to preview MIDI notes along the duration."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {showRecordingOverlay && (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center px-6"
+              aria-live="polite"
+            >
+              <div className="max-w-sm rounded-md border border-white/10 bg-black/50 px-5 py-4 text-center backdrop-blur-md">
+                <p className="flex items-center justify-center gap-2 text-[11px] font-normal uppercase tracking-wider text-white/55">
+                  <span className="text-red-500 animate-pulse">●</span>
+                  Recording MIDI
+                </p>
+                <p className="mt-2 text-xs font-normal leading-relaxed text-white/40">
+                  Capturing blob motion into notes. Press Stop when finished.
+                </p>
+                {liveRecordingFrameCount > 0 && (
+                  <p className="mt-2 font-mono text-xs text-white/50">
+                    {liveRecordingFrameCount} frames buffered
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

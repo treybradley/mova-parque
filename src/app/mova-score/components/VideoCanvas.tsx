@@ -1,8 +1,17 @@
 import { useRef, useEffect, useState } from 'react';
+import type { MutableRefObject } from 'react';
 import { Blob, TrackingSettings, VisualSettings, SoundSettings, BlobFrame } from '@/app/mova-score/types';
 import { detectBlobs } from '@/app/mova-score/utils/blobDetection';
 import { drawBlobs } from '@/app/mova-score/utils/blobVisualization';
 import { SoundEngine } from '@/app/mova-score/utils/soundEngine';
+
+const RECORDING_PROGRESS_MS = 200;
+const DEBUG_INFO_INTERVAL_FRAMES = 15;
+
+export interface RecordingCaptureRefState {
+  active: boolean;
+  frames: BlobFrame[];
+}
 
 interface VideoCanvasProps {
   videoElement: HTMLVideoElement | null;
@@ -11,8 +20,10 @@ interface VideoCanvasProps {
   visualSettings: VisualSettings;
   soundSettings: SoundSettings;
   onBlobsDetected?: (blobs: Blob[]) => void;
-  isRecording?: boolean;
-  onBlobFrameCapture?: (frame: BlobFrame) => void;
+  /** Push frames here while active; avoids React state on every frame. */
+  recordingCaptureRef?: MutableRefObject<RecordingCaptureRefState | null>;
+  /** Throttled (~5 Hz) frame count for UI while recording. */
+  onRecordingFrameCount?: (count: number) => void;
 }
 
 export function VideoCanvas({
@@ -22,13 +33,22 @@ export function VideoCanvas({
   visualSettings,
   soundSettings,
   onBlobsDetected,
-  isRecording,
-  onBlobFrameCapture
+  recordingCaptureRef,
+  onRecordingFrameCount,
 }: VideoCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
-  const [blobs, setBlobs] = useState<Blob[]>([]);
+  const blobsRef = useRef<Blob[]>([]);
+  const trackingSettingsRef = useRef(trackingSettings);
+  const visualSettingsRef = useRef(visualSettings);
+  const soundSettingsRef = useRef(soundSettings);
+  const onBlobsDetectedRef = useRef(onBlobsDetected);
+  const audioContextStartedRef = useRef(false);
+  const recordingProgressLastEmitRef = useRef(0);
+  const onRecordingFrameCountRef = useRef(onRecordingFrameCount);
+  const debugFrameCounterRef = useRef(0);
+
   const soundEngineRef = useRef<SoundEngine | null>(null);
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const [debugInfo, setDebugInfo] = useState<{
@@ -39,7 +59,30 @@ export function VideoCanvas({
     pendingCleanups: number;
   } | null>(null);
 
-  // Handle audio context start (required by browsers)
+  useEffect(() => {
+    trackingSettingsRef.current = trackingSettings;
+  }, [trackingSettings]);
+
+  useEffect(() => {
+    visualSettingsRef.current = visualSettings;
+  }, [visualSettings]);
+
+  useEffect(() => {
+    soundSettingsRef.current = soundSettings;
+  }, [soundSettings]);
+
+  useEffect(() => {
+    onBlobsDetectedRef.current = onBlobsDetected;
+  }, [onBlobsDetected]);
+
+  useEffect(() => {
+    audioContextStartedRef.current = audioContextStarted;
+  }, [audioContextStarted]);
+
+  useEffect(() => {
+    onRecordingFrameCountRef.current = onRecordingFrameCount;
+  }, [onRecordingFrameCount]);
+
   const handleStartAudio = async () => {
     if (soundEngineRef.current && !audioContextStarted) {
       await soundEngineRef.current.start();
@@ -47,10 +90,9 @@ export function VideoCanvas({
     }
   };
 
-  // Initialize sound engine
   useEffect(() => {
     soundEngineRef.current = new SoundEngine(soundSettings);
-    
+
     return () => {
       if (soundEngineRef.current) {
         soundEngineRef.current.dispose();
@@ -58,14 +100,12 @@ export function VideoCanvas({
     };
   }, []);
 
-  // Update sound engine settings
   useEffect(() => {
     if (soundEngineRef.current) {
       soundEngineRef.current.updateSettings(soundSettings);
     }
   }, [soundSettings]);
 
-  // Update video size for sound engine
   useEffect(() => {
     if (soundEngineRef.current && canvasRef.current) {
       soundEngineRef.current.setVideoSize(
@@ -75,21 +115,6 @@ export function VideoCanvas({
     }
   }, [canvasRef.current?.width, canvasRef.current?.height]);
 
-  // Update blobs to sound engine
-  useEffect(() => {
-    if (soundEngineRef.current) {
-      // If video is not playing, stop all sounds
-      if (!isPlaying) {
-        soundEngineRef.current.stopAll();
-      } else {
-        soundEngineRef.current.updateBlobs(blobs);
-      }
-      
-      // Update debug info
-      setDebugInfo(soundEngineRef.current.getDebugInfo());
-    }
-  }, [blobs, isPlaying]);
-
   useEffect(() => {
     if (!canvasRef.current || !videoElement) return;
 
@@ -97,11 +122,13 @@ export function VideoCanvas({
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    // Set canvas size to match video
     const updateCanvasSize = () => {
       if (videoElement.videoWidth && videoElement.videoHeight) {
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
+        if (soundEngineRef.current) {
+          soundEngineRef.current.setVideoSize(canvas.width, canvas.height);
+        }
       }
     };
 
@@ -118,6 +145,9 @@ export function VideoCanvas({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (soundEngineRef.current) {
+        soundEngineRef.current.stopAll();
+      }
       return;
     }
 
@@ -128,30 +158,52 @@ export function VideoCanvas({
     const processFrame = () => {
       if (!videoElement || videoElement.paused || videoElement.ended) return;
 
-      // Draw video frame
       ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-      // Get image data for blob detection
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const detectedBlobs = detectBlobs(imageData, trackingSettingsRef.current);
+      blobsRef.current = detectedBlobs;
 
-      // Detect blobs
-      const detectedBlobs = detectBlobs(imageData, trackingSettings);
-      setBlobs(detectedBlobs);
-      
-      if (onBlobsDetected) {
-        onBlobsDetected(detectedBlobs);
+      onBlobsDetectedRef.current?.(detectedBlobs);
+
+      const engine = soundEngineRef.current;
+      const snd = soundSettingsRef.current;
+      if (engine) {
+        if (!snd.enabled || !audioContextStartedRef.current) {
+          engine.stopAll();
+        } else {
+          engine.updateBlobs(detectedBlobs);
+        }
+
+        if (snd.enabled && audioContextStartedRef.current) {
+          debugFrameCounterRef.current += 1;
+          if (debugFrameCounterRef.current >= DEBUG_INFO_INTERVAL_FRAMES) {
+            debugFrameCounterRef.current = 0;
+            setDebugInfo(engine.getDebugInfo());
+          }
+        }
       }
 
-      // Draw blob visualizations on top
-      drawBlobs(ctx, detectedBlobs, visualSettings);
+      drawBlobs(ctx, detectedBlobs, visualSettingsRef.current);
 
-      // Capture frame if recording
-      if (isRecording && onBlobFrameCapture) {
-        const frame: BlobFrame = {
+      const cap = recordingCaptureRef?.current;
+      if (cap?.active) {
+        cap.frames.push({
           timestamp: videoElement.currentTime,
-          blobs: detectedBlobs
-        };
-        onBlobFrameCapture(frame);
+          blobs: detectedBlobs.map((b) => ({ ...b })),
+        });
+        const emit = onRecordingFrameCountRef.current;
+        if (emit) {
+          const len = cap.frames.length;
+          const now = performance.now();
+          if (
+            len === 1 ||
+            now - recordingProgressLastEmitRef.current >= RECORDING_PROGRESS_MS
+          ) {
+            recordingProgressLastEmitRef.current = now;
+            emit(len);
+          }
+        }
       }
 
       animationFrameRef.current = requestAnimationFrame(processFrame);
@@ -164,7 +216,7 @@ export function VideoCanvas({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [videoElement, isPlaying, trackingSettings, visualSettings, onBlobsDetected, isRecording, onBlobFrameCapture]);
+  }, [videoElement, isPlaying, recordingCaptureRef]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-black" ref={containerRef}>
@@ -172,8 +224,7 @@ export function VideoCanvas({
         ref={canvasRef}
         className="max-w-full max-h-full object-contain"
       />
-      
-      {/* Audio context start button */}
+
       {soundSettings.enabled && !audioContextStarted && (
         <button
           onClick={handleStartAudio}
@@ -182,9 +233,7 @@ export function VideoCanvas({
           Click to Enable Audio
         </button>
       )}
-      
-      
-      {/* Debug info */}
+
       {debugInfo && soundSettings.enabled && audioContextStarted && (
         <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded text-xs space-y-1 font-mono backdrop-blur-md border border-white/10">
           <div className="flex gap-2">

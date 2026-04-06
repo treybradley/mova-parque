@@ -2,7 +2,7 @@ import { Blob, TrackingSettings } from '@/app/mova-score/types';
 
 // Performance limits to prevent crashes
 const MAX_BLOBS = 30; // Maximum number of blobs to detect (strict limit for performance)
-const MAX_BLOB_PIXELS = 50000; // Maximum pixels per blob (prevents huge flood fills)
+const MAX_BLOB_PIXELS = 28000; // Maximum pixels per blob (prevents huge flood fills)
 const SCAN_STEP = 3; // Skip pixels during initial scan for performance
 
 // Simple color distance calculation
@@ -52,27 +52,30 @@ function detectColorBlobs(
       
       visited[idx] = true;
       pixels.push([x, y]);
-      
+      if (pixels.length > MAX_BLOB_PIXELS) {
+        return null;
+      }
+
       // Check 4-connected neighbors
       stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
     }
-    
+
     return pixels.length >= settings.minBlobSize && pixels.length <= settings.maxBlobSize ? { pixels } : null;
   }
-  
+
   // Scan for blobs
   for (let y = 0; y < height; y += SCAN_STEP) {
     for (let x = 0; x < width; x += SCAN_STEP) {
       const idx = y * width + x;
       if (visited[idx]) continue;
-      
+
       const pixelIdx = idx * 4;
       const r = data[pixelIdx];
       const g = data[pixelIdx + 1];
       const b = data[pixelIdx + 2];
-      
+
       const distance = colorDistance(r, g, b, targetRgb.r, targetRgb.g, targetRgb.b);
-      
+
       if (distance <= settings.tolerance * 255) {
         const result = floodFill(x, y);
         if (result) {
@@ -141,24 +144,27 @@ function detectLuminanceBlobs(
       
       visited[idx] = true;
       pixels.push([x, y]);
-      
+      if (pixels.length > MAX_BLOB_PIXELS) {
+        return null;
+      }
+
       stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
     }
-    
+
     return pixels.length >= settings.minBlobSize && pixels.length <= settings.maxBlobSize ? { pixels } : null;
   }
-  
+
   for (let y = 0; y < height; y += SCAN_STEP) {
     for (let x = 0; x < width; x += SCAN_STEP) {
       const idx = y * width + x;
       if (visited[idx]) continue;
-      
+
       const pixelIdx = idx * 4;
       const r = data[pixelIdx];
       const g = data[pixelIdx + 1];
       const b = data[pixelIdx + 2];
       const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-      
+
       if (luminance >= threshold) {
         const result = floodFill(x, y);
         if (result) {
@@ -244,18 +250,21 @@ function detectEdgeBlobs(
       
       visited[idx] = true;
       pixels.push([x, y]);
-      
+      if (pixels.length > MAX_BLOB_PIXELS) {
+        return null;
+      }
+
       stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
     }
-    
+
     return pixels.length >= settings.minBlobSize && pixels.length <= settings.maxBlobSize ? { pixels } : null;
   }
-  
+
   for (let y = 0; y < height; y += SCAN_STEP) {
     for (let x = 0; x < width; x += SCAN_STEP) {
       const idx = y * width + x;
       if (visited[idx] || edges[idx] === 0) continue;
-      
+
       const result = floodFill(x, y);
       if (result) {
         const { pixels } = result;
