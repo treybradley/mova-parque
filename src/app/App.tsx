@@ -48,7 +48,9 @@ import {
   type VideoSourceForRecording,
   type ExportFrameRate,
   type ExportQualityPreset,
+  type PoseRecordingSample,
 } from "@/app/recording";
+import { appendPoseRecordingSample } from "@/app/recording/poseInterpolation";
 
 // Helper function to determine palette based on time of day
 function getPaletteFromTimeOfDay(): number {
@@ -242,6 +244,25 @@ export default function App() {
   });
   const [metricsSnapshot, setMetricsSnapshot] = useState<MetricsSnapshot | null>(null);
   const [metricsHistory, setMetricsHistory] = useState<MetricsSnapshot[]>([]);
+  const poseRecordingSamplesRef = useRef<PoseRecordingSample[]>([]);
+
+  const handleRecordingPoseSample = useCallback((sample: PoseRecordingSample) => {
+    appendPoseRecordingSample(poseRecordingSamplesRef.current, sample);
+  }, []);
+
+  useEffect(() => {
+    poseRecordingSamplesRef.current = [];
+  }, [videoSource.objectUrl, videoSource.type]);
+
+  useEffect(() => {
+    const v = videoSource.videoElement;
+    if (videoSource.type !== "upload" || !v) return;
+    const onSeeked = () => {
+      poseRecordingSamplesRef.current = [];
+    };
+    v.addEventListener("seeked", onSeeked);
+    return () => v.removeEventListener("seeked", onSeeked);
+  }, [videoSource.videoElement, videoSource.type]);
 
   // Refs for canvas layers (if needed in the future)
   // const bodyCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -671,6 +692,34 @@ export default function App() {
           depthEnabled: depthAnything.enabled,
         },
         applyWatermark: !usePremium,
+        poseExport:
+          source.type === "upload" &&
+          source.videoElement &&
+          motionAnalysis.enabled &&
+          background.kaleidoscope === "none"
+            ? {
+                getVideoCurrentTime: () => source.videoElement!.currentTime,
+                getSamples: () => poseRecordingSamplesRef.current,
+                style: {
+                  showSkeleton: motionAnalysis.showSkeleton,
+                  skeletonColor: motionAnalysis.skeletonColor,
+                  skeletonLineWidth: motionAnalysis.skeletonLineWidth,
+                  jointSize: motionAnalysis.jointSize,
+                  lineStyle: motionAnalysis.lineStyle,
+                  showJointAngles: motionAnalysis.showJointAngles,
+                  showROM: motionAnalysis.showROM,
+                  enabledBones: motionAnalysis.enabledBones,
+                  enabledJoints: motionAnalysis.enabledJoints,
+                  jointAngleTextSize: motionAnalysis.jointAngleTextSize,
+                  jointAngleTextColor: motionAnalysis.jointAngleTextColor,
+                  jointAngleBgColor: motionAnalysis.jointAngleBgColor,
+                  romTextSize: motionAnalysis.romTextSize,
+                  romTextColor: motionAnalysis.romTextColor,
+                  romBgColor: motionAnalysis.romBgColor,
+                },
+                confidenceThreshold: 0.3,
+              }
+            : null,
       });
       recordingEngineRef.current = handle;
       recordingDimensionsRef.current = { width: dims.width, height: dims.height };
@@ -691,6 +740,21 @@ export default function App() {
     camera.rawVideoOpacity,
     bodySegmentation.enabled,
     motionAnalysis.enabled,
+    motionAnalysis.showSkeleton,
+    motionAnalysis.skeletonColor,
+    motionAnalysis.skeletonLineWidth,
+    motionAnalysis.jointSize,
+    motionAnalysis.lineStyle,
+    motionAnalysis.showJointAngles,
+    motionAnalysis.showROM,
+    motionAnalysis.enabledBones,
+    motionAnalysis.enabledJoints,
+    motionAnalysis.jointAngleTextSize,
+    motionAnalysis.jointAngleTextColor,
+    motionAnalysis.jointAngleBgColor,
+    motionAnalysis.romTextSize,
+    motionAnalysis.romTextColor,
+    motionAnalysis.romBgColor,
     blobTracking.enabled,
     bodyEffects.showGhostTrails,
     depthAnything.enabled,
@@ -854,6 +918,7 @@ export default function App() {
             romTextSize={motionAnalysis.romTextSize}
             romTextColor={motionAnalysis.romTextColor}
             romBgColor={motionAnalysis.romBgColor}
+            onRecordingPoseSample={handleRecordingPoseSample}
           />
 
           {/* Raw video layer - hidden when Depth Anything is on (depth is the base) */}

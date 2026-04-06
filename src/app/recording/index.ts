@@ -8,5 +8,7 @@ export type {
   RecordingResult,
   StartRecordingOptions,
   RecordingEngineHandle,
+  PoseRecordingSample,
+  PoseExportForRecording,
 } from "./types";
 export { EXPORT_QUALITY_BITRATE } from "./types";

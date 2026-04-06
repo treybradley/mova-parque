@@ -1,3 +1,7 @@
+import type { MetricsSnapshot } from "@/utils/motionMetrics";
+import type { Keypoint } from "@/utils/poseTracking";
+import type { PoseOverlayDrawStyle } from "@/utils/drawPoseOverlay";
+
 /**
  * Video source shape used by mova-parque App (upload or webcam).
  * Used by getRecordingDimensions and RecordingEngine.
@@ -41,6 +45,24 @@ export interface RecordingLayerToggles {
   depthEnabled: boolean;
 }
 
+/** One pose+metrics sample at a video timestamp (upload playback). */
+export interface PoseRecordingSample {
+  videoTime: number;
+  keypoints: Keypoint[];
+  metrics: MetricsSnapshot;
+}
+
+/**
+ * When set (non-kaleidoscope export only), pose is redrawn from interpolated samples
+ * so export frame rate matches smooth motion; kaleidoscope still uses the composited canvas.
+ */
+export interface PoseExportForRecording {
+  getVideoCurrentTime: () => number;
+  getSamples: () => PoseRecordingSample[];
+  style: PoseOverlayDrawStyle;
+  confidenceThreshold: number;
+}
+
 export interface StartRecordingOptions {
   width: number;
   height: number;
@@ -58,6 +80,8 @@ export interface StartRecordingOptions {
   layerToggles: RecordingLayerToggles;
   /** When true, draw a logo watermark (e.g. 20% opacity) on the export. Used for anonymous/free users. */
   applyWatermark: boolean;
+  /** Interpolated pose overlay for upload exports when kaleidoscope is off. */
+  poseExport?: PoseExportForRecording | null;
 }
 
 export interface RecordingResult {

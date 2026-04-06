@@ -5,6 +5,8 @@ import type {
   RecordingEngineHandle,
 } from "./types";
 import { drawLogoWatermarkGrid } from "./watermarkLogo";
+import { interpolatePoseAtTime } from "./poseInterpolation";
+import { drawPoseOverlayOnContext } from "@/utils/drawPoseOverlay";
 
 /**
  * Returns recording dimensions from the current video source.
@@ -61,6 +63,7 @@ export function startRecording(
   } = layerToggles;
 
   const applyWatermark = options.applyWatermark ?? false;
+  const poseExport = options.poseExport ?? null;
 
   const recordingCanvas = document.createElement("canvas");
   recordingCanvas.width = destW;
@@ -173,9 +176,34 @@ export function startRecording(
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(bodyCanvas, 0, 0, bodyCanvas.width, bodyCanvas.height, 0, 0, destW, destH);
       }
-      if (motionAnalysisEnabled && poseValid && poseCanvas) {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(poseCanvas, 0, 0, poseCanvas.width, poseCanvas.height, 0, 0, destW, destH);
+      if (motionAnalysisEnabled) {
+        let drewPose = false;
+        if (!useKaleidoscope && poseExport?.style.showSkeleton) {
+          const interp = interpolatePoseAtTime(
+            poseExport.getSamples(),
+            poseExport.getVideoCurrentTime()
+          );
+          if (interp) {
+            ctx.globalCompositeOperation = "source-over";
+            drawPoseOverlayOnContext(
+              ctx,
+              destW,
+              destH,
+              interp.keypoints,
+              interp.metrics,
+              poseExport.style,
+              {
+                confidenceThreshold: poseExport.confidenceThreshold,
+                clearFullCanvas: false,
+              }
+            );
+            drewPose = true;
+          }
+        }
+        if (!drewPose && poseValid && poseCanvas) {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.drawImage(poseCanvas, 0, 0, poseCanvas.width, poseCanvas.height, 0, 0, destW, destH);
+        }
       }
       if (blobTrackingEnabled && blobValid && blobCanvas) {
         ctx.globalCompositeOperation = "source-over";

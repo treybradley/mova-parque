@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import * as tf from '@tensorflow/tfjs';
 import { BasicMotionMetricsEngine, MetricsSnapshot } from '@/utils/motionMetrics';
-import { PoseFrame, Keypoint, BONE_CONNECTIONS, smoothKeypoints } from '@/utils/poseTracking';
+import { drawPoseOverlayOnContext } from '@/utils/drawPoseOverlay';
+import { PoseFrame, Keypoint, smoothKeypoints } from '@/utils/poseTracking';
+import type { PoseRecordingSample } from '@/app/recording/types';
 
 interface PoseEstimationLayerProps {
   enabled: boolean;
@@ -26,6 +28,8 @@ interface PoseEstimationLayerProps {
   romTextSize?: number;
   romTextColor?: string;
   romBgColor?: string;
+  /** Samples for time-interpolated pose during export (upload + currentTime). */
+  onRecordingPoseSample?: (sample: PoseRecordingSample) => void;
 }
 
 export function PoseEstimationLayer({
@@ -50,6 +54,7 @@ export function PoseEstimationLayer({
   romTextSize = 10,
   romTextColor = '#00ff00',
   romBgColor = '#000000',
+  onRecordingPoseSample,
 }: PoseEstimationLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,8 +64,7 @@ export function PoseEstimationLayer({
   const previousKeypointsRef = useRef<Keypoint[]>([]);
   const lastVideoTimeRef = useRef<number>(-1);
   const isProcessingRef = useRef<boolean>(false);
-  const lastDrawnKeypointsRef = useRef<Keypoint[]>([]); // Track what's currently drawn
-  
+  const onRecordingPoseSampleRef = useRef(onRecordingPoseSample);
   // Refs for style props to avoid stale closures
   const skeletonColorRef = useRef(skeletonColor);
   const skeletonLineWidthRef = useRef(skeletonLineWidth);
@@ -94,6 +98,10 @@ export function PoseEstimationLayer({
     romTextColorRef.current = romTextColor;
     romBgColorRef.current = romBgColor;
   }, [skeletonColor, skeletonLineWidth, jointSize, lineStyle, showJointAngles, showROM, enabledBones, enabledJoints, jointAngleTextSize, jointAngleTextColor, jointAngleBgColor, romTextSize, romTextColor, romBgColor]);
+
+  useEffect(() => {
+    onRecordingPoseSampleRef.current = onRecordingPoseSample;
+  }, [onRecordingPoseSample]);
 
   // Clear canvas when skeleton is disabled
   useEffect(() => {
@@ -222,7 +230,31 @@ export function PoseEstimationLayer({
       // Always draw the latest skeleton - smooth 60fps rendering
       // This is independent of pose detection timing
       const currentMetrics = metrics || undefined;
-      drawSkeleton(ctx, canvas, previousKeypointsRef.current, currentMetrics, true);
+      drawPoseOverlayOnContext(
+        ctx,
+        canvas.width,
+        canvas.height,
+        previousKeypointsRef.current,
+        currentMetrics,
+        {
+          showSkeleton,
+          skeletonColor: skeletonColorRef.current,
+          skeletonLineWidth: skeletonLineWidthRef.current,
+          jointSize: jointSizeRef.current,
+          lineStyle: lineStyleRef.current,
+          showJointAngles: showJointAnglesRef.current,
+          showROM: showROMRef.current,
+          enabledBones: enabledBonesRef.current,
+          enabledJoints: enabledJointsRef.current,
+          jointAngleTextSize: jointAngleTextSizeRef.current,
+          jointAngleTextColor: jointAngleTextColorRef.current,
+          jointAngleBgColor: jointAngleBgColorRef.current,
+          romTextSize: romTextSizeRef.current,
+          romTextColor: romTextColorRef.current,
+          romBgColor: romBgColorRef.current,
+        },
+        { confidenceThreshold, clearFullCanvas: true }
+      );
       
       renderAnimationId = requestAnimationFrame(renderLoop);
     };
@@ -232,7 +264,7 @@ export function PoseEstimationLayer({
     return () => {
       if (renderAnimationId) cancelAnimationFrame(renderAnimationId);
     };
-  }, [enabled, showSkeleton, metrics]);
+  }, [enabled, showSkeleton, metrics, confidenceThreshold]);
   
   // Process pose and calculate metrics
   async function processPose(pose: poseDetection.Pose) {
@@ -270,234 +302,20 @@ export function PoseEstimationLayer({
     // Emit data
     if (onPoseData) onPoseData(poseFrame);
     if (onMetricsData) onMetricsData(calculatedMetrics);
-    
+
+    const recordCb = onRecordingPoseSampleRef.current;
+    if (recordCb && videoSource) {
+      recordCb({
+        videoTime: videoSource.currentTime,
+        keypoints: smoothedKeypoints.map((k) => ({ ...k })),
+        metrics: JSON.parse(JSON.stringify(calculatedMetrics)) as MetricsSnapshot,
+      });
+    }
+
     // Clear canvas if skeleton is disabled
     if (!showSkeleton) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-  }
-  
-  // Draw skeleton (following review doc patterns)
-  function drawSkeleton(
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    keypoints: Keypoint[],
-    currentMetrics?: MetricsSnapshot,
-    forceClear: boolean = true
-  ) {
-    // Check if we have any valid keypoints to draw
-    const hasValidKeypoints = keypoints.some(kp => kp.score > confidenceThreshold);
-    
-    // If no valid keypoints, don't draw anything
-    // If forceClear is true, clear the canvas to show nothing
-    // If forceClear is false, keep previous skeleton (don't clear, don't draw)
-    if (!hasValidKeypoints) {
-      if (forceClear) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        lastDrawnKeypointsRef.current = [];
-      }
-      return;
-    }
-    
-    // We have valid keypoints - always clear and redraw to ensure clean rendering
-    // This prevents double-drawing artifacts and ensures skeleton stays visible
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Update what we've drawn
-    lastDrawnKeypointsRef.current = keypoints.map(kp => ({ ...kp }));
-    
-    // MoveNet returns coordinates in the input video's pixel coordinate space
-    // Canvas internal resolution is set to match video resolution (videoWidth x videoHeight)
-    // So we can use 1:1 mapping - keypoints are already in the correct coordinate space
-    const scaleX = 1;
-    const scaleY = 1;
-    const offsetX = 0;
-    const offsetY = 0;
-    
-    // Draw bones
-    ctx.strokeStyle = skeletonColorRef.current;
-    ctx.lineWidth = skeletonLineWidthRef.current;
-    
-    // Set line style
-    if (lineStyleRef.current === 'dashed') {
-      ctx.setLineDash([5, 5]);
-    } else {
-      ctx.setLineDash([]);
-    }
-    
-    BONE_CONNECTIONS.forEach(([start, end], boneIndex) => {
-      // Check if this bone is enabled
-      if (enabledBonesRef.current && !enabledBonesRef.current[boneIndex]) return;
-      
-      const startPoint = keypoints[start];
-      const endPoint = keypoints[end];
-      
-      if (startPoint && endPoint && 
-          startPoint.score > confidenceThreshold && 
-          endPoint.score > confidenceThreshold) {
-        ctx.beginPath();
-        ctx.moveTo(
-          startPoint.x * scaleX + offsetX,
-          startPoint.y * scaleY + offsetY
-        );
-        ctx.lineTo(
-          endPoint.x * scaleX + offsetX,
-          endPoint.y * scaleY + offsetY
-        );
-        ctx.stroke();
-      }
-    });
-    
-    // Reset line dash
-    ctx.setLineDash([]);
-    
-    // Draw joints (skip face landmarks: indices 0-4)
-    ctx.fillStyle = skeletonColorRef.current;
-    keypoints.forEach((keypoint, jointIndex) => {
-      // Skip face landmarks (nose, eyes, ears) - indices 0-4
-      if (jointIndex < 5) return;
-      
-      // Check if this joint is enabled
-      if (enabledJointsRef.current && !enabledJointsRef.current[jointIndex]) return;
-      
-      if (keypoint.score > confidenceThreshold) {
-        const x = keypoint.x * scaleX + offsetX;
-        const y = keypoint.y * scaleY + offsetY;
-        
-        ctx.beginPath();
-        ctx.arc(x, y, jointSizeRef.current, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // Determine if joint is on left or right side for "outside" positioning
-        // Left joints: 7 (left_elbow), 9 (left_wrist), 11 (left_hip), 13 (left_knee), 15 (left_ankle)
-        // Right joints: 8 (right_elbow), 10 (right_wrist), 12 (right_hip), 14 (right_knee), 16 (right_ankle)
-        const leftJoints = [7, 9, 11, 13, 15];
-        const rightJoints = [8, 10, 12, 14, 16];
-        const isLeftJoint = leftJoints.includes(jointIndex);
-        const isRightJoint = rightJoints.includes(jointIndex);
-        
-        // Draw joint angle if enabled and metrics available
-        if (showJointAnglesRef.current && currentMetrics) {
-          const jointAngle = currentMetrics.jointAngles.find(ja => {
-            // Map joint index to joint name (simplified mapping)
-            const jointNames: { [key: number]: string } = {
-              13: 'left_knee',
-              14: 'right_knee',
-              11: 'left_hip',
-              12: 'right_hip',
-              7: 'left_elbow',
-              8: 'right_elbow',
-            };
-            return ja.jointName === jointNames[jointIndex];
-          });
-          
-          if (jointAngle) {
-            const text = `${jointAngle.angle}°`;
-            ctx.font = `bold ${jointAngleTextSizeRef.current}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Measure text for background
-            const textMetrics = ctx.measureText(text);
-            const textWidth = textMetrics.width;
-            const textHeight = jointAngleTextSizeRef.current;
-            const padding = 4;
-            const bgWidth = textWidth + padding * 2;
-            const bgHeight = textHeight + padding * 2;
-            
-            // Position on the outside of the joint
-            // From viewer's perspective: person's left side is on viewer's right (higher X)
-            // So left joints should have text on the RIGHT (positive X) to be outside
-            // And right joints should have text on the LEFT (negative X) to be outside
-            let textX: number;
-            if (isLeftJoint) {
-              // Left joints: position to the RIGHT (outside, away from body center from viewer's perspective)
-              textX = x + jointSizeRef.current + bgWidth / 2 + 8;
-            } else if (isRightJoint) {
-              // Right joints: position to the LEFT (outside, away from body center from viewer's perspective)
-              textX = x - jointSizeRef.current - bgWidth / 2 - 8;
-            } else {
-              // Default to right for other joints
-              textX = x + jointSizeRef.current + bgWidth / 2 + 8;
-            }
-            const textY = y;
-            
-            // Draw background
-            ctx.fillStyle = jointAngleBgColorRef.current;
-            ctx.fillRect(
-              textX - bgWidth / 2,
-              textY - bgHeight / 2,
-              bgWidth,
-              bgHeight
-            );
-            
-            // Draw text
-            ctx.fillStyle = jointAngleTextColorRef.current;
-            ctx.fillText(text, textX, textY);
-          }
-        }
-        
-        // Draw ROM if enabled and metrics available
-        if (showROMRef.current && currentMetrics) {
-          const romData = currentMetrics.rom.find(r => {
-            const jointNames: { [key: number]: string } = {
-              13: 'left_knee',
-              14: 'right_knee',
-              11: 'left_hip',
-              12: 'right_hip',
-              7: 'left_elbow',
-              8: 'right_elbow',
-            };
-            return r.jointName === jointNames[jointIndex];
-          });
-          
-          if (romData) {
-            const text = `ROM: ${romData.range}°`;
-            ctx.font = `${romTextSizeRef.current}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Measure text for background
-            const textMetrics = ctx.measureText(text);
-            const textWidth = textMetrics.width;
-            const textHeight = romTextSizeRef.current;
-            const padding = 4;
-            const bgWidth = textWidth + padding * 2;
-            const bgHeight = textHeight + padding * 2;
-            
-            // Position on the outside of the joint
-            // From viewer's perspective: person's left side is on viewer's right (higher X)
-            // So left joints should have text on the RIGHT (positive X) to be outside
-            // And right joints should have text on the LEFT (negative X) to be outside
-            let textX: number;
-            if (isLeftJoint) {
-              // Left joints: position to the RIGHT (outside, away from body center from viewer's perspective), below
-              textX = x + jointSizeRef.current + bgWidth / 2 + 8;
-            } else if (isRightJoint) {
-              // Right joints: position to the LEFT (outside, away from body center from viewer's perspective), below
-              textX = x - jointSizeRef.current - bgWidth / 2 - 8;
-            } else {
-              // Default to right for other joints
-              textX = x + jointSizeRef.current + bgWidth / 2 + 8;
-            }
-            const textY = y + jointSizeRef.current + bgHeight / 2 + 8;
-            
-            // Draw background
-            ctx.fillStyle = romBgColorRef.current;
-            ctx.fillRect(
-              textX - bgWidth / 2,
-              textY - bgHeight / 2,
-              bgWidth,
-              bgHeight
-            );
-            
-            // Draw text
-            ctx.fillStyle = romTextColorRef.current;
-            ctx.fillText(text, textX, textY);
-          }
-        }
-      }
-    });
   }
   
   // Setup canvas with proper resolution
