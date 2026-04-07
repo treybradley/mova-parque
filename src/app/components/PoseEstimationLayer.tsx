@@ -326,45 +326,35 @@ export function PoseEstimationLayer({
     const resize = () => {
       const viewportHeight = document.documentElement.clientHeight;
       const viewportWidth = document.documentElement.clientWidth;
-      
-      // Get video dimensions for internal canvas resolution
-      let videoWidth = 640;
-      let videoHeight = 480;
-      let shouldCenter = false;
-      
-      if (videoSource) {
-        videoWidth = videoSource.videoWidth || 640;
-        videoHeight = videoSource.videoHeight || 480;
-        
-        if (videoWidth > 0 && videoHeight > 0) {
-          shouldCenter = true;
-        }
-      }
-      
-      // Set internal canvas resolution to match video (for crisp rendering)
+
+      // Internal resolution stays in video pixel space for accurate keypoint plotting.
+      const videoWidth = videoSource?.videoWidth || 640;
+      const videoHeight = videoSource?.videoHeight || 480;
       canvas.width = videoWidth;
       canvas.height = videoHeight;
-      
-      // Calculate display size based on viewport and aspect ratio
-      const videoAspect = videoWidth / videoHeight;
-      const viewportAspect = viewportWidth / viewportHeight;
-      
+
       let displayWidth: number;
       let displayHeight: number;
-      
-      if (videoAspect > viewportAspect) {
-        // Video is wider - fit to width
-        displayWidth = viewportWidth;
-        displayHeight = viewportWidth / videoAspect;
-      } else {
-        // Video is taller - fit to height
+      let shouldCenter = false;
+
+      if (videoSource && videoSource.videoWidth > 0 && videoSource.videoHeight > 0) {
+        // Match BodySegmentationLayer/RawVideoLayer upload behavior:
+        // full viewport height, width derived from video aspect, centered horizontally.
+        const videoAspect = videoSource.videoWidth / videoSource.videoHeight;
         displayHeight = viewportHeight;
-        displayWidth = viewportHeight * videoAspect;
+        displayWidth = displayHeight * videoAspect;
+        shouldCenter = true;
+      } else {
+        // Fallback (metadata not ready): webcam-like full viewport sizing.
+        displayWidth = viewportWidth;
+        displayHeight = viewportHeight;
       }
-      
+
       canvas.style.width = `${displayWidth}px`;
       canvas.style.height = `${displayHeight}px`;
-      
+
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
       if (shouldCenter) {
         canvas.style.left = '50%';
         canvas.style.transform = 'translateX(-50%)';
@@ -372,8 +362,6 @@ export function PoseEstimationLayer({
         canvas.style.left = '0';
         canvas.style.transform = 'none';
       }
-      
-      // Render loop will handle redrawing - no need to draw here on resize
     };
     
     resize();
