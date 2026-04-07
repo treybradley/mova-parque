@@ -323,7 +323,7 @@ export function ControlPanel(props: ControlPanelProps) {
           {/* Body Segmentation - Always visible */}
           <div className="space-y-4">
             <Label className="text-xs font-normal tracking-wider text-white/60 uppercase text-[11px]">
-              1. Upload or record video
+              Upload or record video
             </Label>
 
             {/* Source Status Badge */}
@@ -2034,7 +2034,7 @@ export function ControlPanel(props: ControlPanelProps) {
         {props.appMode === "mova-parque" &&
           props.onStartRecording != null &&
           props.onStopRecording != null && (
-            <div className="flex-shrink-0 border-t border-white/10 p-2 md:p-4 bg-[#181a1a]">
+            <div className="flex-shrink-0 border-t border-white/10 p-6 bg-[#181a1a]">
               <CollapsibleSection title="Record & Export" defaultOpen={false}>
                 <RecordAndExport
                   hasVideoSource={
