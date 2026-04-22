@@ -25,7 +25,7 @@ export function VideoUpload(props: VideoUploadProps) {
 
   const ACCEPTED_FORMATS = ["video/mp4", "video/webm", "video/quicktime"];
   const MAX_FILE_SIZE = 130 * 1024 * 1024; // 130MB in bytes
-  const MAX_DURATION = 30; // 30 seconds
+  const MAX_DURATION = 60; // 60 seconds
 
   const validateVideo = async (file: File): Promise<boolean> => {
     // Check format
@@ -182,7 +182,7 @@ export function VideoUpload(props: VideoUploadProps) {
                       Drop video or click to browse
                     </p>
                     <p className="text-[9px] text-white/40 font-light">
-                      MP4, WebM, MOV • 130MB max • 30s max
+                      MP4, WebM, MOV • 130MB max • 60s max
                     </p>
                   </div>
                 </>
