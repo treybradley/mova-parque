@@ -139,9 +139,6 @@ export function startRecording(
       const poseCanvas = document.querySelector(
         "canvas.pose-estimation-canvas"
       ) as HTMLCanvasElement | undefined;
-      const gridCanvas = document.querySelector(
-        "canvas.grid-background-layer"
-      ) as HTMLCanvasElement | undefined;
       const depthCanvas = document.querySelector(
         "canvas.depth-layer-canvas"
       ) as HTMLCanvasElement | undefined;
@@ -149,15 +146,10 @@ export function startRecording(
       const bodyValid = bodyCanvas && bodyCanvas.width > 1 && bodyCanvas.height > 1;
       const blobValid = blobCanvas && blobCanvas.width > 1 && blobCanvas.height > 1;
       const poseValid = poseCanvas && poseCanvas.width > 1 && poseCanvas.height > 1;
-      const gridValid = gridCanvas && gridCanvas.width > 1 && gridCanvas.height > 1;
       const depthValid = depthCanvas && depthCanvas.width > 1 && depthCanvas.height > 1;
 
-      if (!bodyValid && !blobValid && !poseValid && !gridValid && !depthValid) return;
+      if (!bodyValid && !blobValid && !poseValid && !depthValid) return;
 
-      if (gridValid && gridCanvas) {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(gridCanvas, 0, 0, gridCanvas.width, gridCanvas.height, 0, 0, destW, destH);
-      }
       if (depthEnabled && depthValid && depthCanvas) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(depthCanvas, 0, 0, depthCanvas.width, depthCanvas.height, 0, 0, destW, destH);

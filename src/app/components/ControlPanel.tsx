@@ -25,7 +25,6 @@ import { useState } from "react";
 import { useIsMobile } from "./ui/use-mobile";
 import { ResponsiveInfoPopover } from "./ui/responsive-info-popover";
 import { BlobTrackingConfig } from "@/utils/blobTracking";
-import { GridConfig } from "@/utils/gridRenderer";
 import { VideoUpload } from "./VideoUpload";
 import { RecordAndExport } from "./RecordAndExport";
 import type { ExportFrameRate, ExportQualityPreset } from "@/app/recording";
@@ -53,8 +52,6 @@ interface ControlPanelProps {
     ghostFrames: number;
     ghostDecay: number;
     ghostSpeed: number;
-    visibility: number;
-    livePersonVisibility: number;
     trailColorGradient: number;
     showGhostTrails: boolean;
   };
@@ -64,7 +61,6 @@ interface ControlPanelProps {
     rawVideoOpacity: number;
   };
   blobTracking: BlobTrackingConfig;
-  gridBackground: GridConfig;
   motionAnalysis: {
     enabled: boolean;
     showSkeleton: boolean;
@@ -110,10 +106,6 @@ interface ControlPanelProps {
   onBlobTrackingChange: (
     key: keyof BlobTrackingConfig,
     value: any,
-  ) => void;
-  onGridBackgroundChange: (
-    key: keyof GridConfig,
-    value: number | string | boolean,
   ) => void;
   depthAnything?: {
     enabled: boolean;
@@ -181,10 +173,6 @@ export function ControlPanel(props: ControlPanelProps) {
           ghosting effect
         </p>
         <p>
-          <strong>Live Person Visibility:</strong> Opacity of
-          the current live person silhouette
-        </p>
-        <p>
           <strong>Live Tint:</strong> Color tinting applied to
           the live person
         </p>
@@ -195,10 +183,6 @@ export function ControlPanel(props: ControlPanelProps) {
         <p>
           <strong>Aura Intensity:</strong> Strength of the aura
           glow effect
-        </p>
-        <p>
-          <strong>Visibility (Fallback):</strong> Base
-          visibility when camera effects are minimal
         </p>
         <p>
           <strong>Color Grade:</strong> Color grading intensity
@@ -386,9 +370,6 @@ export function ControlPanel(props: ControlPanelProps) {
                 )}
             </div>
 
-            {/* Visual Separator */}
-            <div className="border-t border-white/10"></div>
-
             {/* Show Raw Video - Only visible when source is available */}
             {((props.videoSource.type === "upload" && props.videoSource.metadata) || props.cameraStream) && (
               <div className="space-y-2">
@@ -563,61 +544,6 @@ export function ControlPanel(props: ControlPanelProps) {
                     className="slider-custom"
                   />
                 </div>
-
-                {/* Live Person Visibility */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-white/70 font-light">
-                      Live Person Visibility
-                    </span>
-                    <span className="text-xs text-white/50 font-light">
-                      {Math.round(
-                        props.bodyEffects.livePersonVisibility *
-                          100,
-                      )}
-                    </span>
-                  </div>
-                  <Slider
-                    value={[props.bodyEffects.livePersonVisibility]}
-                    onValueChange={(value) =>
-                      props.onBodyEffectsChange(
-                        "livePersonVisibility",
-                        value[0],
-                      )
-                    }
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    className="slider-custom"
-                  />
-                </div>
-
-                {/* Visibility */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-white/70 font-light">
-                      Visibility (Fallback)
-                    </span>
-                    <span className="text-xs text-white/50 font-light">
-                      {Math.round(
-                        props.bodyEffects.visibility * 100,
-                      )}
-                    </span>
-                  </div>
-                  <Slider
-                    value={[props.bodyEffects.visibility]}
-                    onValueChange={(value) =>
-                      props.onBodyEffectsChange(
-                        "visibility",
-                        value[0],
-                      )
-                    }
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    className="slider-custom"
-                  />
-                </div>
               </>
             )}
 
@@ -653,271 +579,277 @@ export function ControlPanel(props: ControlPanelProps) {
                 />
               </div>
               
-              {/* Show Skeleton */}
-              <div className="flex items-center justify-between">
-                <Label className="text-[12px] text-white/70 font-light">
-                  Show Skeleton
-                </Label>
-                <Switch
-                  checked={props.motionAnalysis.showSkeleton}
-                  disabled={!!props.cameraStream}
-                  onCheckedChange={(value) => props.onMotionAnalysisChange("showSkeleton", value)}
-                />
-              </div>
-
-              {/* Skeleton Customization */}
-              <div className="pt-0 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[12px] text-white/70 font-light">
-                    Skeleton Color
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={props.motionAnalysis.skeletonColor}
-                      onChange={(e) => props.onMotionAnalysisChange("skeletonColor", e.target.value)}
-                      disabled={!!props.cameraStream}
-                      className="w-12 h-8 rounded border border-white/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <input
-                      type="text"
-                      value={props.motionAnalysis.skeletonColor}
-                      onChange={(e) => props.onMotionAnalysisChange("skeletonColor", e.target.value)}
-                      disabled={!!props.cameraStream}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                      placeholder="#00ff00"
-                    />
-                  </div>
-                </div>
-
-                {/* Line Width */}
-                <div className="space-y-2">
+              {props.motionAnalysis.enabled && (
+                <>
+                  {/* Show Skeleton */}
                   <div className="flex items-center justify-between">
                     <Label className="text-[12px] text-white/70 font-light">
-                      Line Width
+                      Show Skeleton
                     </Label>
-                    <span className="text-xs text-white/50 font-light">
-                      {props.motionAnalysis.skeletonLineWidth}
-                    </span>
+                    <Switch
+                      checked={props.motionAnalysis.showSkeleton}
+                      disabled={!!props.cameraStream}
+                      onCheckedChange={(value) => props.onMotionAnalysisChange("showSkeleton", value)}
+                    />
                   </div>
-                  <Slider
-                    value={[props.motionAnalysis.skeletonLineWidth]}
-                    onValueChange={(value) => props.onMotionAnalysisChange("skeletonLineWidth", value[0])}
-                    disabled={!!props.cameraStream}
-                    min={1}
-                    max={10}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
 
-                {/* Joint Size */}
-                <div className="space-y-2">
+                  {/* Skeleton Customization */}
+                  {props.motionAnalysis.showSkeleton && (
+                    <div className="pt-0 space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-[12px] text-white/70 font-light">
+                          Skeleton Color
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={props.motionAnalysis.skeletonColor}
+                            onChange={(e) => props.onMotionAnalysisChange("skeletonColor", e.target.value)}
+                            disabled={!!props.cameraStream}
+                            className="w-12 h-8 rounded border border-white/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <input
+                            type="text"
+                            value={props.motionAnalysis.skeletonColor}
+                            onChange={(e) => props.onMotionAnalysisChange("skeletonColor", e.target.value)}
+                            disabled={!!props.cameraStream}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder="#00ff00"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Line Width */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[12px] text-white/70 font-light">
+                            Line Width
+                          </Label>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.motionAnalysis.skeletonLineWidth}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.motionAnalysis.skeletonLineWidth]}
+                          onValueChange={(value) => props.onMotionAnalysisChange("skeletonLineWidth", value[0])}
+                          disabled={!!props.cameraStream}
+                          min={1}
+                          max={10}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Joint Size */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[12px] text-white/70 font-light">
+                            Joint Size
+                          </Label>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.motionAnalysis.jointSize}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.motionAnalysis.jointSize]}
+                          onValueChange={(value) => props.onMotionAnalysisChange("jointSize", value[0])}
+                          disabled={!!props.cameraStream}
+                          min={2}
+                          max={16}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Line Style */}
+                      <div className="space-y-2">
+                        <Label className="text-[12px] text-white/70 font-light">
+                          Line Style
+                        </Label>
+                        <select
+                          value={props.motionAnalysis.lineStyle}
+                          onChange={(e) => props.onMotionAnalysisChange("lineStyle", e.target.value)}
+                          disabled={!!props.cameraStream}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="solid">Solid</option>
+                          <option value="dashed">Dashed</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show Joint Angles */}
                   <div className="flex items-center justify-between">
                     <Label className="text-[12px] text-white/70 font-light">
-                      Joint Size
+                      Show Joint Angles on Skeleton
                     </Label>
-                    <span className="text-xs text-white/50 font-light">
-                      {props.motionAnalysis.jointSize}
-                    </span>
+                    <Switch
+                      checked={props.motionAnalysis.showJointAngles}
+                      disabled={!!props.cameraStream}
+                      onCheckedChange={(value) => props.onMotionAnalysisChange("showJointAngles", value)}
+                    />
                   </div>
-                  <Slider
-                    value={[props.motionAnalysis.jointSize]}
-                    onValueChange={(value) => props.onMotionAnalysisChange("jointSize", value[0])}
-                    disabled={!!props.cameraStream}
-                    min={2}
-                    max={16}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
 
-                {/* Line Style */}
-                <div className="space-y-2">
-                  <Label className="text-[12px] text-white/70 font-light">
-                    Line Style
-                  </Label>
-                  <select
-                    value={props.motionAnalysis.lineStyle}
-                    onChange={(e) => props.onMotionAnalysisChange("lineStyle", e.target.value)}
-                    disabled={!!props.cameraStream}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                  </select>
-                </div>
+                  {/* Show ROM */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[12px] text-white/70 font-light">
+                      Show ROM on Skeleton
+                    </Label>
+                    <Switch
+                      checked={props.motionAnalysis.showROM}
+                      disabled={!!props.cameraStream}
+                      onCheckedChange={(value) => props.onMotionAnalysisChange("showROM", value)}
+                    />
+                  </div>
 
-                {/* Show Joint Angles */}
-                <div className="flex items-center justify-between">
-                  <Label className="text-[12px] text-white/70 font-light">
-                    Show Joint Angles on Skeleton
-                  </Label>
-                  <Switch
-                    checked={props.motionAnalysis.showJointAngles}
-                    disabled={!!props.cameraStream}
-                    onCheckedChange={(value) => props.onMotionAnalysisChange("showJointAngles", value)}
-                  />
-                </div>
+                  {/* Joint Angle Text Styling */}
+                  {props.motionAnalysis.showJointAngles && (
+                    <div className="pt-4 border-t border-white/10 space-y-4">
+                      <div className="text-xs text-white/50 font-light uppercase">
+                        Joint Angle Text
+                      </div>
 
-                {/* Show ROM */}
-                <div className="flex items-center justify-between">
-                  <Label className="text-[12px] text-white/70 font-light">
-                    Show ROM on Skeleton
-                  </Label>
-                  <Switch
-                    checked={props.motionAnalysis.showROM}
-                    disabled={!!props.cameraStream}
-                    onCheckedChange={(value) => props.onMotionAnalysisChange("showROM", value)}
-                  />
-                </div>
+                      {/* Joint Angle Text Size */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[12px] text-white/70 font-light">
+                            Text Size
+                          </Label>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.motionAnalysis.jointAngleTextSize}px
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.motionAnalysis.jointAngleTextSize]}
+                          onValueChange={(value) => props.onMotionAnalysisChange("jointAngleTextSize", value[0])}
+                          min={8}
+                          max={24}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
 
-                {/* Joint Angle Text Styling */}
-                {props.motionAnalysis.showJointAngles && (
-                  <div className="pt-4 border-t border-white/10 space-y-4">
-                    <div className="text-xs text-white/50 font-light uppercase">
-                      Joint Angle Text
-                    </div>
-
-                    {/* Joint Angle Text Size */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      {/* Joint Angle Text Color */}
+                      <div className="space-y-2">
                         <Label className="text-[12px] text-white/70 font-light">
-                          Text Size
+                          Text Color
                         </Label>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.motionAnalysis.jointAngleTextSize}px
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={props.motionAnalysis.jointAngleTextColor}
+                            onChange={(e) => props.onMotionAnalysisChange("jointAngleTextColor", e.target.value)}
+                            className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={props.motionAnalysis.jointAngleTextColor}
+                            onChange={(e) => props.onMotionAnalysisChange("jointAngleTextColor", e.target.value)}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                            placeholder="#00ff00"
+                          />
+                        </div>
                       </div>
-                      <Slider
-                        value={[props.motionAnalysis.jointAngleTextSize]}
-                        onValueChange={(value) => props.onMotionAnalysisChange("jointAngleTextSize", value[0])}
-                        min={8}
-                        max={24}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
 
-                    {/* Joint Angle Text Color */}
-                    <div className="space-y-2">
-                      <Label className="text-[12px] text-white/70 font-light">
-                        Text Color
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={props.motionAnalysis.jointAngleTextColor}
-                          onChange={(e) => props.onMotionAnalysisChange("jointAngleTextColor", e.target.value)}
-                          className="w-12 h-8 rounded border border-white/10 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={props.motionAnalysis.jointAngleTextColor}
-                          onChange={(e) => props.onMotionAnalysisChange("jointAngleTextColor", e.target.value)}
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
-                          placeholder="#00ff00"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Joint Angle Background Color */}
-                    <div className="space-y-2">
-                      <Label className="text-[12px] text-white/70 font-light">
-                        Background Color
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={props.motionAnalysis.jointAngleBgColor}
-                          onChange={(e) => props.onMotionAnalysisChange("jointAngleBgColor", e.target.value)}
-                          className="w-12 h-8 rounded border border-white/10 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={props.motionAnalysis.jointAngleBgColor}
-                          onChange={(e) => props.onMotionAnalysisChange("jointAngleBgColor", e.target.value)}
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
-                          placeholder="#000000"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ROM Text Styling */}
-                {props.motionAnalysis.showROM && (
-                  <div className="pt-4 border-t border-white/10 space-y-4">
-                    <div className="text-xs text-white/50 font-light uppercase">
-                      ROM Text
-                    </div>
-
-                    {/* ROM Text Size */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      {/* Joint Angle Background Color */}
+                      <div className="space-y-2">
                         <Label className="text-[12px] text-white/70 font-light">
-                          Text Size
+                          Background Color
                         </Label>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.motionAnalysis.romTextSize}px
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={props.motionAnalysis.jointAngleBgColor}
+                            onChange={(e) => props.onMotionAnalysisChange("jointAngleBgColor", e.target.value)}
+                            className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={props.motionAnalysis.jointAngleBgColor}
+                            onChange={(e) => props.onMotionAnalysisChange("jointAngleBgColor", e.target.value)}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                            placeholder="#000000"
+                          />
+                        </div>
                       </div>
-                      <Slider
-                        value={[props.motionAnalysis.romTextSize]}
-                        onValueChange={(value) => props.onMotionAnalysisChange("romTextSize", value[0])}
-                        min={8}
-                        max={24}
-                        step={1}
-                        className="w-full"
-                      />
                     </div>
+                  )}
 
-                    {/* ROM Text Color */}
-                    <div className="space-y-2">
-                      <Label className="text-[12px] text-white/70 font-light">
-                        Text Color
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={props.motionAnalysis.romTextColor}
-                          onChange={(e) => props.onMotionAnalysisChange("romTextColor", e.target.value)}
-                          className="w-12 h-8 rounded border border-white/10 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={props.motionAnalysis.romTextColor}
-                          onChange={(e) => props.onMotionAnalysisChange("romTextColor", e.target.value)}
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
-                          placeholder="#00ff00"
-                        />
+                  {/* ROM Text Styling */}
+                  {props.motionAnalysis.showROM && (
+                    <div className="pt-4 border-t border-white/10 space-y-4">
+                      <div className="text-xs text-white/50 font-light uppercase">
+                        ROM Text
                       </div>
-                    </div>
 
-                    {/* ROM Background Color */}
-                    <div className="space-y-2">
-                      <Label className="text-[12px] text-white/70 font-light">
-                        Background Color
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={props.motionAnalysis.romBgColor}
-                          onChange={(e) => props.onMotionAnalysisChange("romBgColor", e.target.value)}
-                          className="w-12 h-8 rounded border border-white/10 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={props.motionAnalysis.romBgColor}
-                          onChange={(e) => props.onMotionAnalysisChange("romBgColor", e.target.value)}
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
-                          placeholder="#000000"
+                      {/* ROM Text Size */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[12px] text-white/70 font-light">
+                            Text Size
+                          </Label>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.motionAnalysis.romTextSize}px
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.motionAnalysis.romTextSize]}
+                          onValueChange={(value) => props.onMotionAnalysisChange("romTextSize", value[0])}
+                          min={8}
+                          max={24}
+                          step={1}
+                          className="w-full"
                         />
                       </div>
+
+                      {/* ROM Text Color */}
+                      <div className="space-y-2">
+                        <Label className="text-[12px] text-white/70 font-light">
+                          Text Color
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={props.motionAnalysis.romTextColor}
+                            onChange={(e) => props.onMotionAnalysisChange("romTextColor", e.target.value)}
+                            className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={props.motionAnalysis.romTextColor}
+                            onChange={(e) => props.onMotionAnalysisChange("romTextColor", e.target.value)}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                            placeholder="#00ff00"
+                          />
+                        </div>
+                      </div>
+
+                      {/* ROM Background Color */}
+                      <div className="space-y-2">
+                        <Label className="text-[12px] text-white/70 font-light">
+                          Background Color
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={props.motionAnalysis.romBgColor}
+                            onChange={(e) => props.onMotionAnalysisChange("romBgColor", e.target.value)}
+                            className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={props.motionAnalysis.romBgColor}
+                            onChange={(e) => props.onMotionAnalysisChange("romBgColor", e.target.value)}
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                            placeholder="#000000"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </div>
           </CollapsibleSection>
                     
@@ -1075,870 +1007,738 @@ export function ControlPanel(props: ControlPanelProps) {
                   </div>
                 </div>
 
-                {/* Detection Settings */}
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/60 font-light uppercase tracking-wider">
-                        Detection
-                      </span>
-                    </div>
-
-                    {/* Threshold */}
-                    <div className="space-y-2">
+                {props.blobTracking.enabled && (
+                  <div className="space-y-4 pt-4">
+                    {/* Detection Settings */}
+                    <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Threshold
-                        </span>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.blobTracking.threshold}
+                        <span className="text-xs text-white/60 font-light uppercase tracking-wider">
+                          Detection
                         </span>
                       </div>
-                      <Slider
-                        value={[props.blobTracking.threshold]}
-                        onValueChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "threshold",
-                            value[0],
-                          )
-                        }
-                        min={0}
-                        max={255}
-                        step={1}
-                        className="slider-custom"
-                      />
-                    </div>
 
-                    {/* Detection Mode */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Detection Mode
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          className={`px-3 py-2 text-xs font-light rounded transition-all ${
-                            props.blobTracking.detectionMode ===
-                            "bright"
-                              ? "bg-white/20 text-white"
-                              : "bg-white/5 text-white/50 hover:bg-white/10"
-                          }`}
-                          onClick={() =>
-                            props.onBlobTrackingChange(
-                              "detectionMode",
-                              "bright",
-                            )
-                          }
-                        >
-                          Bright
-                        </button>
-                        <button
-                          className={`px-3 py-2 text-xs font-light rounded transition-all ${
-                            props.blobTracking.detectionMode ===
-                            "dark"
-                              ? "bg-white/20 text-white"
-                              : "bg-white/5 text-white/50 hover:bg-white/10"
-                          }`}
-                          onClick={() =>
-                            props.onBlobTrackingChange(
-                              "detectionMode",
-                              "dark",
-                            )
-                          }
-                        >
-                          Dark
-                        </button>
-                        <button
-                          className={`px-3 py-2 text-xs font-light rounded transition-all ${
-                            props.blobTracking.detectionMode ===
-                            "edge"
-                              ? "bg-white/20 text-white"
-                              : "bg-white/5 text-white/50 hover:bg-white/10"
-                          }`}
-                          onClick={() =>
-                            props.onBlobTrackingChange(
-                              "detectionMode",
-                              "edge",
-                            )
-                          }
-                        >
-                          Edge
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Min Blob Size */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Min Blob Size
-                        </span>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.blobTracking.minBlobSize}
-                        </span>
-                      </div>
-                      <Slider
-                        value={[props.blobTracking.minBlobSize]}
-                        onValueChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "minBlobSize",
-                            value[0],
-                          )
-                        }
-                        min={10}
-                        max={500}
-                        step={5}
-                        className="slider-custom"
-                      />
-                    </div>
-
-                    {/* Max Blob Size */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Max Blob Size
-                        </span>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.blobTracking.maxBlobSize}
-                        </span>
-                      </div>
-                      <Slider
-                        value={[props.blobTracking.maxBlobSize]}
-                        onValueChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "maxBlobSize",
-                            value[0],
-                          )
-                        }
-                        min={100}
-                        max={50000}
-                        step={100}
-                        className="slider-custom"
-                      />
-                    </div>
-
-                    {/* Detection Interval */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Detection Interval
-                        </span>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.blobTracking.detectionInterval}{" "}
-                          frames
-                        </span>
-                      </div>
-                      <Slider
-                        value={[
-                          props.blobTracking.detectionInterval,
-                        ]}
-                        onValueChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "detectionInterval",
-                            value[0],
-                          )
-                        }
-                        min={1}
-                        max={30}
-                        step={1}
-                        className="slider-custom"
-                      />
-                    </div>
-
-                    {/* Smoothing */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/70 font-light">
-                          Smoothing
-                        </span>
-                        <span className="text-xs text-white/50 font-light">
-                          {props.blobTracking.smoothing.toFixed(
-                            3,
-                          )}
-                        </span>
-                      </div>
-                      <Slider
-                        value={[props.blobTracking.smoothing]}
-                        onValueChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "smoothing",
-                            value[0],
-                          )
-                        }
-                        min={0}
-                        max={0.999}
-                        step={0.001}
-                        className="slider-custom"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bounding Boxes */}
-                  <div className="space-y-2 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/60 font-light uppercase tracking-wider">
-                        Bounding Boxes
-                      </span>
-                      <Switch
-                        checked={
-                          props.blobTracking.showBoundingBoxes
-                        }
-                        onCheckedChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "showBoundingBoxes",
-                            value,
-                          )
-                        }
-                      />
-                    </div>
-
-                    {props.blobTracking.showBoundingBoxes && (
-                      <>
-                        {/* Shape */}
-                        <div className="space-y-2">
+                      {/* Threshold */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
                           <span className="text-xs text-white/70 font-light">
-                            Shape
+                            Threshold
                           </span>
-                          <div className="grid grid-cols-2 gap-2">
-                            {["square", "circle"].map(
-                              (shape) => (
-                                <button
-                                  key={shape}
-                                  onClick={() =>
-                                    props.onBlobTrackingChange(
-                                      "boundingBoxShape",
-                                      shape,
-                                    )
-                                  }
-                                  className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
-                                    props.blobTracking
-                                      .boundingBoxShape ===
-                                    shape
-                                      ? "bg-white/20 text-white border border-white/30"
-                                      : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
-                                  }`}
-                                >
-                                  {shape
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                    shape.slice(1)}
-                                </button>
-                              ),
+                          <span className="text-xs text-white/50 font-light">
+                            {props.blobTracking.threshold}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.blobTracking.threshold]}
+                          onValueChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "threshold",
+                              value[0],
+                            )
+                          }
+                          min={0}
+                          max={255}
+                          step={1}
+                          className="slider-custom"
+                        />
+                      </div>
+
+                      {/* Detection Mode */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/70 font-light">
+                            Detection Mode
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            className={`px-3 py-2 text-xs font-light rounded transition-all ${
+                              props.blobTracking.detectionMode ===
+                              "bright"
+                                ? "bg-white/20 text-white"
+                                : "bg-white/5 text-white/50 hover:bg-white/10"
+                            }`}
+                            onClick={() =>
+                              props.onBlobTrackingChange(
+                                "detectionMode",
+                                "bright",
+                              )
+                            }
+                          >
+                            Bright
+                          </button>
+                          <button
+                            className={`px-3 py-2 text-xs font-light rounded transition-all ${
+                              props.blobTracking.detectionMode ===
+                              "dark"
+                                ? "bg-white/20 text-white"
+                                : "bg-white/5 text-white/50 hover:bg-white/10"
+                            }`}
+                            onClick={() =>
+                              props.onBlobTrackingChange(
+                                "detectionMode",
+                                "dark",
+                              )
+                            }
+                          >
+                            Dark
+                          </button>
+                          <button
+                            className={`px-3 py-2 text-xs font-light rounded transition-all ${
+                              props.blobTracking.detectionMode ===
+                              "edge"
+                                ? "bg-white/20 text-white"
+                                : "bg-white/5 text-white/50 hover:bg-white/10"
+                            }`}
+                            onClick={() =>
+                              props.onBlobTrackingChange(
+                                "detectionMode",
+                                "edge",
+                              )
+                            }
+                          >
+                            Edge
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Min Blob Size */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/70 font-light">
+                            Min Blob Size
+                          </span>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.blobTracking.minBlobSize}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.blobTracking.minBlobSize]}
+                          onValueChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "minBlobSize",
+                              value[0],
+                            )
+                          }
+                          min={10}
+                          max={500}
+                          step={5}
+                          className="slider-custom"
+                        />
+                      </div>
+
+                      {/* Max Blob Size */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/70 font-light">
+                            Max Blob Size
+                          </span>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.blobTracking.maxBlobSize}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[props.blobTracking.maxBlobSize]}
+                          onValueChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "maxBlobSize",
+                              value[0],
+                            )
+                          }
+                          min={100}
+                          max={50000}
+                          step={100}
+                          className="slider-custom"
+                        />
+                      </div>
+
+                      {/* Detection Interval */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/70 font-light">
+                            Detection Interval
+                          </span>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.blobTracking.detectionInterval}{" "}
+                            frames
+                          </span>
+                        </div>
+                        <Slider
+                          value={[
+                            props.blobTracking.detectionInterval,
+                          ]}
+                          onValueChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "detectionInterval",
+                              value[0],
+                            )
+                          }
+                          min={1}
+                          max={30}
+                          step={1}
+                          className="slider-custom"
+                        />
+                      </div>
+
+                      {/* Smoothing */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/70 font-light">
+                            Smoothing
+                          </span>
+                          <span className="text-xs text-white/50 font-light">
+                            {props.blobTracking.smoothing.toFixed(
+                              3,
                             )}
-                          </div>
-                        </div>
-
-                        {/* Style */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Style
                           </span>
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              "frame",
-                              "l-frame",
-                              "x-frame",
-                              "grid",
-                              "scope",
-                            ].map((style) => (
-                              <button
-                                key={style}
-                                onClick={() =>
-                                  props.onBlobTrackingChange(
-                                    "boundingBoxRegionStyle",
-                                    style,
-                                  )
-                                }
-                                className={`px-2 py-2 rounded-lg text-xs font-light transition-all ${
-                                  props.blobTracking
-                                    .boundingBoxRegionStyle ===
-                                  style
-                                    ? "bg-white/20 text-white border border-white/30"
-                                    : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
-                                }`}
-                              >
-                                {style
-                                  .split("-")
-                                  .map(
-                                    (w) =>
-                                      w
-                                        .charAt(0)
-                                        .toUpperCase() +
-                                      w.slice(1),
-                                  )
-                                  .join("-")}
-                              </button>
-                            ))}
-                          </div>
                         </div>
+                        <Slider
+                          value={[props.blobTracking.smoothing]}
+                          onValueChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "smoothing",
+                              value[0],
+                            )
+                          }
+                          min={0}
+                          max={0.999}
+                          step={0.001}
+                          className="slider-custom"
+                        />
+                      </div>
+                    </div>
 
-                        {/* Size */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
+                    {/* Bounding Boxes */}
+                    <div className="space-y-2 pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/60 font-light uppercase tracking-wider">
+                          Bounding Boxes
+                        </span>
+                        <Switch
+                          checked={
+                            props.blobTracking.showBoundingBoxes
+                          }
+                          onCheckedChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "showBoundingBoxes",
+                              value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      {props.blobTracking.showBoundingBoxes && (
+                        <>
+                          {/* Shape */}
+                          <div className="space-y-2">
                             <span className="text-xs text-white/70 font-light">
-                              Size
+                              Shape
                             </span>
-                            <span className="text-xs text-white/50 font-light">
-                              {props.blobTracking.boundingBoxSize.toFixed(
-                                2,
+                            <div className="grid grid-cols-2 gap-2">
+                              {["square", "circle"].map(
+                                (shape) => (
+                                  <button
+                                    key={shape}
+                                    onClick={() =>
+                                      props.onBlobTrackingChange(
+                                        "boundingBoxShape",
+                                        shape,
+                                      )
+                                    }
+                                    className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                                      props.blobTracking
+                                        .boundingBoxShape ===
+                                      shape
+                                        ? "bg-white/20 text-white border border-white/30"
+                                        : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
+                                    }`}
+                                  >
+                                    {shape
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      shape.slice(1)}
+                                  </button>
+                                ),
                               )}
-                            </span>
+                            </div>
                           </div>
-                          <Slider
-                            value={[
-                              props.blobTracking
-                                .boundingBoxSize,
-                            ]}
-                            onValueChange={(value) =>
-                              props.onBlobTrackingChange(
-                                "boundingBoxSize",
-                                value[0],
-                              )
-                            }
-                            min={0.05}
-                            max={3.0}
-                            step={0.05}
-                            className="slider-custom"
-                          />
-                        </div>
 
-                        {/* Line Width */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
+                          {/* Style */}
+                          <div className="space-y-2">
                             <span className="text-xs text-white/70 font-light">
-                              Line Width
+                              Style
                             </span>
-                            <span className="text-xs text-white/50 font-light">
-                              {
-                                props.blobTracking
-                                  .boundingBoxLineWidth
-                              }
-                            </span>
-                          </div>
-                          <Slider
-                            value={[
-                              props.blobTracking
-                                .boundingBoxLineWidth,
-                            ]}
-                            onValueChange={(value) =>
-                              props.onBlobTrackingChange(
-                                "boundingBoxLineWidth",
-                                value[0],
-                              )
-                            }
-                            min={1}
-                            max={10}
-                            step={1}
-                            className="slider-custom"
-                          />
-                        </div>
-
-                        {/* Color */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Color
-                          </span>
-                          <input
-                            type="color"
-                            value={
-                              props.blobTracking
-                                .boundingBoxColor
-                            }
-                            onChange={(e) =>
-                              props.onBlobTrackingChange(
-                                "boundingBoxColor",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Centroids */}
-                  <div className="space-y-2 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/60 font-light uppercase tracking-wider">
-                        Centroids
-                      </span>
-                      <Switch
-                        checked={
-                          props.blobTracking.showCentroids
-                        }
-                        onCheckedChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "showCentroids",
-                            value,
-                          )
-                        }
-                      />
-                    </div>
-
-                    {props.blobTracking.showCentroids && (
-                      <>
-                        {/* Size */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-white/70 font-light">
-                              Size
-                            </span>
-                            <span className="text-xs text-white/50 font-light">
-                              {props.blobTracking.centroidSize}
-                            </span>
-                          </div>
-                          <Slider
-                            value={[
-                              props.blobTracking.centroidSize,
-                            ]}
-                            onValueChange={(value) =>
-                              props.onBlobTrackingChange(
-                                "centroidSize",
-                                value[0],
-                              )
-                            }
-                            min={2}
-                            max={15}
-                            step={1}
-                            className="slider-custom"
-                          />
-                        </div>
-
-                        {/* Color */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Color
-                          </span>
-                          <input
-                            type="color"
-                            value={
-                              props.blobTracking.centroidColor
-                            }
-                            onChange={(e) =>
-                              props.onBlobTrackingChange(
-                                "centroidColor",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Connections */}
-                  <div className="space-y-2 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/60 font-light uppercase tracking-wider">
-                        Connections
-                      </span>
-                      <Switch
-                        checked={
-                          props.blobTracking.showConnections
-                        }
-                        onCheckedChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "showConnections",
-                            value,
-                          )
-                        }
-                      />
-                    </div>
-
-                    {props.blobTracking.showConnections && (
-                      <>
-                        {/* Style */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Style
-                          </span>
-                          <div className="grid grid-cols-2 gap-2">
-                            {["solid", "dashed"].map(
-                              (style) => (
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                "frame",
+                                "l-frame",
+                                "x-frame",
+                                "grid",
+                                "scope",
+                              ].map((style) => (
                                 <button
                                   key={style}
                                   onClick={() =>
                                     props.onBlobTrackingChange(
-                                      "connectionStyle",
+                                      "boundingBoxRegionStyle",
                                       style,
                                     )
                                   }
-                                  className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                                  className={`px-2 py-2 rounded-lg text-xs font-light transition-all ${
                                     props.blobTracking
-                                      .connectionStyle === style
+                                      .boundingBoxRegionStyle ===
+                                    style
                                       ? "bg-white/20 text-white border border-white/30"
                                       : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
                                   }`}
                                 >
                                   {style
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                    style.slice(1)}
+                                    .split("-")
+                                    .map(
+                                      (w) =>
+                                        w
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                        w.slice(1),
+                                    )
+                                    .join("-")}
                                 </button>
-                              ),
-                            )}
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Line Width */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-white/70 font-light">
-                              Line Width
-                            </span>
-                            <span className="text-xs text-white/50 font-light">
-                              {
+                          {/* Size */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/70 font-light">
+                                Size
+                              </span>
+                              <span className="text-xs text-white/50 font-light">
+                                {props.blobTracking.boundingBoxSize.toFixed(
+                                  2,
+                                )}
+                              </span>
+                            </div>
+                            <Slider
+                              value={[
                                 props.blobTracking
-                                  .connectionLineWidth
+                                  .boundingBoxSize,
+                              ]}
+                              onValueChange={(value) =>
+                                props.onBlobTrackingChange(
+                                  "boundingBoxSize",
+                                  value[0],
+                                )
                               }
-                            </span>
+                              min={0.05}
+                              max={3.0}
+                              step={0.05}
+                              className="slider-custom"
+                            />
                           </div>
-                          <Slider
-                            value={[
-                              props.blobTracking
-                                .connectionLineWidth,
-                            ]}
-                            onValueChange={(value) =>
-                              props.onBlobTrackingChange(
-                                "connectionLineWidth",
-                                value[0],
-                              )
-                            }
-                            min={0.5}
-                            max={10}
-                            step={0.5}
-                            className="slider-custom"
-                          />
-                        </div>
 
-                        {/* Color */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Color
-                          </span>
-                          <input
-                            type="color"
-                            value={
-                              props.blobTracking.connectionColor
-                            }
-                            onChange={(e) =>
-                              props.onBlobTrackingChange(
-                                "connectionColor",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
+                          {/* Line Width */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/70 font-light">
+                                Line Width
+                              </span>
+                              <span className="text-xs text-white/50 font-light">
+                                {
+                                  props.blobTracking
+                                    .boundingBoxLineWidth
+                                }
+                              </span>
+                            </div>
+                            <Slider
+                              value={[
+                                props.blobTracking
+                                  .boundingBoxLineWidth,
+                              ]}
+                              onValueChange={(value) =>
+                                props.onBlobTrackingChange(
+                                  "boundingBoxLineWidth",
+                                  value[0],
+                                )
+                              }
+                              min={1}
+                              max={10}
+                              step={1}
+                              className="slider-custom"
+                            />
+                          </div>
 
-                  {/* Text Labels */}
-                  <div className="space-y-2 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/60 font-light uppercase tracking-wider">
-                        Text Labels
-                      </span>
-                      <Switch
-                        checked={props.blobTracking.showText}
-                        onCheckedChange={(value) =>
-                          props.onBlobTrackingChange(
-                            "showText",
-                            value,
-                          )
-                        }
-                      />
+                          {/* Color */}
+                          <div className="space-y-2">
+                            <span className="text-xs text-white/70 font-light">
+                              Color
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={
+                                  props.blobTracking
+                                    .boundingBoxColor
+                                }
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "boundingBoxColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={props.blobTracking.boundingBoxColor}
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "boundingBoxColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                                placeholder="#00ff00"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {props.blobTracking.showText && (
-                      <>
-                        {/* Type */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Type
-                          </span>
-                          <div className="grid grid-cols-2 gap-2">
-                            {["position", "count"].map(
-                              (type) => (
-                                <button
-                                  key={type}
-                                  onClick={() =>
-                                    props.onBlobTrackingChange(
-                                      "textType",
-                                      type,
-                                    )
-                                  }
-                                  className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
-                                    props.blobTracking
-                                      .textType === type
-                                      ? "bg-white/20 text-white border border-white/30"
-                                      : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
-                                  }`}
-                                >
-                                  {type
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                    type.slice(1)}
-                                </button>
-                              ),
-                            )}
-                          </div>
-                        </div>
+                    {/* Centroids */}
+                    <div className="space-y-2 pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/60 font-light uppercase tracking-wider">
+                          Centroids
+                        </span>
+                        <Switch
+                          checked={
+                            props.blobTracking.showCentroids
+                          }
+                          onCheckedChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "showCentroids",
+                              value,
+                            )
+                          }
+                        />
+                      </div>
 
-                        {/* Font Size */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
+                      {props.blobTracking.showCentroids && (
+                        <>
+                          {/* Size */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/70 font-light">
+                                Size
+                              </span>
+                              <span className="text-xs text-white/50 font-light">
+                                {props.blobTracking.centroidSize}
+                              </span>
+                            </div>
+                            <Slider
+                              value={[
+                                props.blobTracking.centroidSize,
+                              ]}
+                              onValueChange={(value) =>
+                                props.onBlobTrackingChange(
+                                  "centroidSize",
+                                  value[0],
+                                )
+                              }
+                              min={2}
+                              max={15}
+                              step={1}
+                              className="slider-custom"
+                            />
+                          </div>
+
+                          {/* Color */}
+                          <div className="space-y-2">
                             <span className="text-xs text-white/70 font-light">
-                              Font Size
+                              Color
                             </span>
-                            <span className="text-xs text-white/50 font-light">
-                              {props.blobTracking.textFontSize}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={
+                                  props.blobTracking.centroidColor
+                                }
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "centroidColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={props.blobTracking.centroidColor}
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "centroidColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                                placeholder="#00ff00"
+                              />
+                            </div>
                           </div>
-                          <Slider
-                            value={[
-                              props.blobTracking.textFontSize,
-                            ]}
-                            onValueChange={(value) =>
-                              props.onBlobTrackingChange(
-                                "textFontSize",
-                                value[0],
-                              )
-                            }
-                            min={8}
-                            max={24}
-                            step={1}
-                            className="slider-custom"
-                          />
-                        </div>
+                        </>
+                      )}
+                    </div>
 
-                        {/* Color */}
-                        <div className="space-y-2">
-                          <span className="text-xs text-white/70 font-light">
-                            Color
-                          </span>
-                          <input
-                            type="color"
-                            value={props.blobTracking.textColor}
-                            onChange={(e) =>
-                              props.onBlobTrackingChange(
-                                "textColor",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-                          />
-                        </div>
-                      </>
-                    )}
+                    {/* Connections */}
+                    <div className="space-y-2 pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/60 font-light uppercase tracking-wider">
+                          Connections
+                        </span>
+                        <Switch
+                          checked={
+                            props.blobTracking.showConnections
+                          }
+                          onCheckedChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "showConnections",
+                              value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      {props.blobTracking.showConnections && (
+                        <>
+                          {/* Style */}
+                          <div className="space-y-2">
+                            <span className="text-xs text-white/70 font-light">
+                              Style
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {["solid", "dashed"].map(
+                                (style) => (
+                                  <button
+                                    key={style}
+                                    onClick={() =>
+                                      props.onBlobTrackingChange(
+                                        "connectionStyle",
+                                        style,
+                                      )
+                                    }
+                                    className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                                      props.blobTracking
+                                        .connectionStyle === style
+                                        ? "bg-white/20 text-white border border-white/30"
+                                        : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
+                                    }`}
+                                  >
+                                    {style
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      style.slice(1)}
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Line Width */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/70 font-light">
+                                Line Width
+                              </span>
+                              <span className="text-xs text-white/50 font-light">
+                                {
+                                  props.blobTracking
+                                    .connectionLineWidth
+                                }
+                              </span>
+                            </div>
+                            <Slider
+                              value={[
+                                props.blobTracking
+                                  .connectionLineWidth,
+                              ]}
+                              onValueChange={(value) =>
+                                props.onBlobTrackingChange(
+                                  "connectionLineWidth",
+                                  value[0],
+                                )
+                              }
+                              min={0.5}
+                              max={10}
+                              step={0.5}
+                              className="slider-custom"
+                            />
+                          </div>
+
+                          {/* Color */}
+                          <div className="space-y-2">
+                            <span className="text-xs text-white/70 font-light">
+                              Color
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={
+                                  props.blobTracking.connectionColor
+                                }
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "connectionColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={props.blobTracking.connectionColor}
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "connectionColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                                placeholder="#00ff00"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Text Labels */}
+                    <div className="space-y-2 pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/60 font-light uppercase tracking-wider">
+                          Text Labels
+                        </span>
+                        <Switch
+                          checked={props.blobTracking.showText}
+                          onCheckedChange={(value) =>
+                            props.onBlobTrackingChange(
+                              "showText",
+                              value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      {props.blobTracking.showText && (
+                        <>
+                          {/* Type */}
+                          <div className="space-y-2">
+                            <span className="text-xs text-white/70 font-light">
+                              Type
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {["position", "count"].map(
+                                (type) => (
+                                  <button
+                                    key={type}
+                                    onClick={() =>
+                                      props.onBlobTrackingChange(
+                                        "textType",
+                                        type,
+                                      )
+                                    }
+                                    className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                                      props.blobTracking
+                                        .textType === type
+                                        ? "bg-white/20 text-white border border-white/30"
+                                        : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
+                                    }`}
+                                  >
+                                    {type
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      type.slice(1)}
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Font Size */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/70 font-light">
+                                Font Size
+                              </span>
+                              <span className="text-xs text-white/50 font-light">
+                                {props.blobTracking.textFontSize}
+                              </span>
+                            </div>
+                            <Slider
+                              value={[
+                                props.blobTracking.textFontSize,
+                              ]}
+                              onValueChange={(value) =>
+                                props.onBlobTrackingChange(
+                                  "textFontSize",
+                                  value[0],
+                                )
+                              }
+                              min={8}
+                              max={24}
+                              step={1}
+                              className="slider-custom"
+                            />
+                          </div>
+
+                          {/* Color */}
+                          <div className="space-y-2">
+                            <span className="text-xs text-white/70 font-light">
+                              Color
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={props.blobTracking.textColor}
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "textColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={props.blobTracking.textColor}
+                                onChange={(e) =>
+                                  props.onBlobTrackingChange(
+                                    "textColor",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                                placeholder="#00ff00"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </CollapsibleSection>
             </div>
-          
-          </CollapsibleSection>
 
-          {/* Visual Separator */}
-          <div className="border-t border-white/10"></div>
+            {/* Visual Separator */}
+            <div className="border-t border-white/10"></div>
 
-          {/* Grid Background */}
-          <CollapsibleSection
-            title="Grid Background"
-            defaultOpen={false}
-          >
-            {/* Master Enable */}
-            <div className="space-y-2 pb-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-white/70 font-light">
-                  Enable Grid Background
-                </span>
-                <Switch
-                  checked={props.gridBackground.enabled}
-                  onCheckedChange={(value) =>
-                    props.onGridBackgroundChange("enabled", value)
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Grid Style */}
-            <div className="space-y-2 pb-2">
-              <span className="text-xs text-white/70 font-light">
-                Grid Style
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {(["square", "isometric", "polar", "dots"] as const).map(
-                  (style) => (
-                    <button
-                      key={style}
-                      onClick={() =>
-                        props.onGridBackgroundChange("style", style)
-                      }
-                      className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
-                        props.gridBackground.style === style
-                          ? "bg-white/20 text-white border border-white/30"
-                          : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80"
-                      }`}
-                    >
-                      {style.charAt(0).toUpperCase() + style.slice(1)}
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* Grid Color */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Color
-                </span>
-              </div>
-              <input
-                type="color"
-                value={
-                  props.gridBackground.color.length === 7
-                    ? props.gridBackground.color
-                    : props.gridBackground.color.slice(0, 7)
-                }
-                onChange={(e) =>
-                  props.onGridBackgroundChange("color", e.target.value)
-                }
-                className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-              />
-            </div>
-
-            {/* Grid Size */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Size
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(props.gridBackground.size)}px
-                </span>
-              </div>
-              <Slider
-                value={[props.gridBackground.size]}
-                onValueChange={(value) =>
-                  props.onGridBackgroundChange("size", value[0])
-                }
-                min={10}
-                max={200}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Line Width */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Line Width
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {props.gridBackground.lineWidth.toFixed(1)}px
-                </span>
-              </div>
-              <Slider
-                value={[props.gridBackground.lineWidth]}
-                onValueChange={(value) =>
-                  props.onGridBackgroundChange("lineWidth", value[0])
-                }
-                min={0.5}
-                max={5}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Line Opacity */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Line Opacity
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(props.gridBackground.opacity * 100)}%
-                </span>
-              </div>
-              <Slider
-                value={[props.gridBackground.opacity]}
-                onValueChange={(value) =>
-                  props.onGridBackgroundChange("opacity", value[0])
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="w-full"
-              />
-            </div>
-
-            {/* Background Color */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Background Color
-                </span>
-              </div>
-              <input
-                type="color"
-                value={
-                  props.gridBackground.backgroundColor.length === 7
-                    ? props.gridBackground.backgroundColor
-                    : props.gridBackground.backgroundColor.slice(0, 7)
-                }
-                onChange={(e) =>
-                  props.onGridBackgroundChange(
-                    "backgroundColor",
-                    e.target.value,
-                  )
-                }
-                className="w-full h-10 rounded-lg border border-white/20 bg-transparent cursor-pointer"
-              />
-            </div>
-
-            {/* Background Opacity */}
-            <div className="space-y-2 pb-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/70 font-light">
-                  Grid Background Opacity
-                </span>
-                <span className="text-xs text-white/50 font-light">
-                  {Math.round(
-                    props.gridBackground.backgroundOpacity * 100,
-                  )}
-                  %
-                </span>
-              </div>
-              <Slider
-                value={[props.gridBackground.backgroundOpacity]}
-                onValueChange={(value) =>
-                  props.onGridBackgroundChange(
-                    "backgroundOpacity",
-                    value[0],
-                  )
-                }
-                min={0}
-                max={1}
-                step={0.01}
-                className="w-full"
-              />
-            </div>
-          </CollapsibleSection>
-
-          {/* Visual Separator */}
-          <div className="border-t border-white/10"></div>
-
-          {/* ========== POST PROCESSING ========== */}
-          <CollapsibleSection
-            title="Post Processing"
-            defaultOpen={false}
-          >
+            {/* Post Processing - Nested Collapsible */}
+            <div className="pt-2">
+              <CollapsibleSection
+                title="Post Processing"
+                defaultOpen={false}
+              >
             {/* Film Grain Intensity */}
             <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between">
@@ -2028,9 +1828,12 @@ export function ControlPanel(props: ControlPanelProps) {
                 ))}
               </div>
             </div>
-          </CollapsibleSection>
+              </CollapsibleSection>
             </div>
+
+          </CollapsibleSection>
           </div>
+        </div>
         {props.appMode === "mova-parque" &&
           props.onStartRecording != null &&
           props.onStopRecording != null && (

@@ -10,8 +10,6 @@ interface BodySegmentationLayerProps {
     ghostTrail: number;
     ghostFrames: number;
     ghostDecay: number;
-    visibility: number;
-    livePersonVisibility: number;
     trailColorGradient: number;
     ghostSpeed: number;
     showGhostTrails: boolean;
@@ -449,10 +447,8 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
       }
 
       // === COMPOSITE VIDEO THROUGH SEGMENTATION MASK ===
-      // Always draw video feed, control visibility with alpha
-      const showLivePerson = bodyEffectsRef.current.livePersonVisibility > 0.01;
-      
-      if (showLivePerson && activeVideoElement && activeVideoElement.readyState === 4) {
+      // Always draw full video feed masked to the person silhouette
+      if (activeVideoElement && activeVideoElement.readyState === 4) {
         tempCtx.globalCompositeOperation = 'source-over';
         tempCtx.globalAlpha = 1;
         
@@ -463,29 +459,17 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         // Draw full video with proper aspect ratio
         tempCtx.drawImage(activeVideoElement, drawX, drawY, drawWidth, drawHeight);
         
-        // Step 2: Use mask to cut out the person shape (same positioning as video)
+        // Use mask to cut out the person shape (same positioning as video)
         tempCtx.globalCompositeOperation = 'destination-in';
         if (sourceCanvas.width > 0 && sourceCanvas.height > 0) {
-          // Also enable smoothing for mask
           tempCtx.imageSmoothingEnabled = true;
           tempCtx.imageSmoothingQuality = 'high';
           tempCtx.drawImage(sourceCanvas, drawX, drawY, drawWidth, drawHeight);
         }
         
-        // Step 3: Apply final visibility/opacity
+        // Restore to normal compositing for further effects
         tempCtx.globalCompositeOperation = 'source-over';
-        tempCtx.globalAlpha = bodyEffectsRef.current.livePersonVisibility;
-      } else {
-        // Fallback to white silhouette if livePersonVisibility is low
-        tempCtx.globalCompositeOperation = 'source-over';
-        tempCtx.globalAlpha = bodyEffectsRef.current.visibility;
-        
-        // Draw the current source mask with proper aspect ratio (same positioning as video)
-        if (sourceCanvas.width > 0 && sourceCanvas.height > 0) {
-          tempCtx.imageSmoothingEnabled = true;
-          tempCtx.imageSmoothingQuality = 'high';
-          tempCtx.drawImage(sourceCanvas, drawX, drawY, drawWidth, drawHeight);
-        }
+        tempCtx.globalAlpha = 1;
       }
 
       tempCtx.restore();

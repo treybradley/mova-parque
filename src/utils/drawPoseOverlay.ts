@@ -45,7 +45,7 @@ export function drawPoseOverlayOnContext(
 ): void {
   const { confidenceThreshold, clearFullCanvas } = opts;
 
-  if (!style.showSkeleton) {
+  if (!style.showSkeleton && !style.showJointAngles && !style.showROM) {
     if (clearFullCanvas) {
       ctx.clearRect(0, 0, width, height);
     }
@@ -70,36 +70,37 @@ export function drawPoseOverlayOnContext(
   const offsetX = 0;
   const offsetY = 0;
 
-  ctx.strokeStyle = style.skeletonColor;
-  ctx.lineWidth = style.skeletonLineWidth;
+  if (style.showSkeleton) {
+    ctx.strokeStyle = style.skeletonColor;
+    ctx.lineWidth = style.skeletonLineWidth;
 
-  if (style.lineStyle === "dashed") {
-    ctx.setLineDash([5, 5]);
-  } else {
-    ctx.setLineDash([]);
+    if (style.lineStyle === "dashed") {
+      ctx.setLineDash([5, 5]);
+    } else {
+      ctx.setLineDash([]);
+    }
+
+    BONE_CONNECTIONS.forEach(([start, end], boneIndex) => {
+      if (style.enabledBones && !style.enabledBones[boneIndex]) return;
+
+      const startPoint = keypoints[start];
+      const endPoint = keypoints[end];
+
+      if (
+        startPoint &&
+        endPoint &&
+        startPoint.score > confidenceThreshold &&
+        endPoint.score > confidenceThreshold
+      ) {
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x * scaleX + offsetX, startPoint.y * scaleY + offsetY);
+        ctx.lineTo(endPoint.x * scaleX + offsetX, endPoint.y * scaleY + offsetY);
+        ctx.stroke();
+      }
+    });
   }
 
-  BONE_CONNECTIONS.forEach(([start, end], boneIndex) => {
-    if (style.enabledBones && !style.enabledBones[boneIndex]) return;
-
-    const startPoint = keypoints[start];
-    const endPoint = keypoints[end];
-
-    if (
-      startPoint &&
-      endPoint &&
-      startPoint.score > confidenceThreshold &&
-      endPoint.score > confidenceThreshold
-    ) {
-      ctx.beginPath();
-      ctx.moveTo(startPoint.x * scaleX + offsetX, startPoint.y * scaleY + offsetY);
-      ctx.lineTo(endPoint.x * scaleX + offsetX, endPoint.y * scaleY + offsetY);
-      ctx.stroke();
-    }
-  });
-
   ctx.setLineDash([]);
-
   ctx.fillStyle = style.skeletonColor;
   const leftJoints = [7, 9, 11, 13, 15];
   const rightJoints = [8, 10, 12, 14, 16];
@@ -112,9 +113,11 @@ export function drawPoseOverlayOnContext(
       const x = keypoint.x * scaleX + offsetX;
       const y = keypoint.y * scaleY + offsetY;
 
-      ctx.beginPath();
-      ctx.arc(x, y, style.jointSize, 0, 2 * Math.PI);
-      ctx.fill();
+      if (style.showSkeleton) {
+        ctx.beginPath();
+        ctx.arc(x, y, style.jointSize, 0, 2 * Math.PI);
+        ctx.fill();
+      }
 
       const isLeftJoint = leftJoints.includes(jointIndex);
       const isRightJoint = rightJoints.includes(jointIndex);

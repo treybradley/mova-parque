@@ -6,7 +6,6 @@ import { KaleidoscopeLayer } from "@/app/components/KaleidoscopeLayer";
 import { WatermarkLayer } from "@/app/components/WatermarkLayer";
 import { FilmGrainLayer } from "@/app/components/FilmGrainLayer";
 import { BlobTrackingLayer } from "@/app/components/BlobTrackingLayer";
-import { GridBackgroundLayer } from "@/app/components/GridBackgroundLayer";
 import { DepthLayer } from "@/app/components/DepthLayer";
 import { PoseEstimationLayer } from "@/app/components/PoseEstimationLayer";
 import { MotionAnalysisOverlay } from "@/app/components/MotionAnalysisOverlay";
@@ -38,7 +37,6 @@ import {
   BlobTrackingConfig,
 } from "@/utils/blobTracking";
 import { blobTrackingColorPresets } from "@/utils/colorTheory";
-import { GridConfig } from "@/utils/gridRenderer";
 import { PoseFrame } from "@/utils/poseTracking";
 import { MetricsSnapshot } from "@/utils/motionMetrics";
 import {
@@ -83,19 +81,6 @@ export default function App() {
   const [background, setBackground] = useState({
     kaleidoscope: "none", // 'none', 'horizontal', 'vertical', 'radial'
   });
-  const [gridBackground, setGridBackground] = useState<GridConfig>({
-    enabled: true, // Grid ON by default
-    style: "dots",
-    color: "#757575", // rgb(117, 117, 117)
-    size: 72,
-    lineWidth: 2,
-    offsetX: 0.5,
-    offsetY: 0.5,
-    rotation: 0,
-    opacity: 1, // grid lines 100% by default
-    backgroundColor: "#000000",
-    backgroundOpacity: 0,
-  });
   const [camera, setCamera] = useState({
     enabled: false,
     showRawVideo: true, // Original Video Background enabled by default
@@ -109,8 +94,6 @@ export default function App() {
     ghostFrames: 15,
     ghostDecay: 0.51,
     ghostSpeed: 0.95,
-    visibility: 1.0, // Visibility (Fallback) = 100% by default
-    livePersonVisibility: 1.0, // Live Person Visibility = 100% by default
     trailColorGradient: 0.9,
     showGhostTrails: true,
   });
@@ -389,13 +372,6 @@ export default function App() {
     value: number | string,
   ) => {
     setBackground((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleGridBackgroundChange = (
-    key: keyof GridConfig,
-    value: number | string | boolean,
-  ) => {
-    setGridBackground((prev) => ({ ...prev, [key]: value as any }));
   };
 
   // Motion Analysis Handlers
@@ -852,19 +828,6 @@ export default function App() {
               : cameraStream
           }
         >
-          {/* Grid background layer - Behind body effects */}
-          <GridBackgroundLayer
-            enabled={gridBackground.enabled}
-            config={gridBackground}
-            videoSource={
-              videoSource.type === "upload"
-                ? videoSource.videoElement
-                : cameraStream
-            }
-            isRecording={isRecording}
-            recordingDimensionsRef={recordingDimensionsRef}
-          />
-
           {/* Depth Anything layer - base when enabled (replaces raw video) */}
           <DepthLayer
             videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
@@ -972,7 +935,6 @@ export default function App() {
         bodyEffects={bodyEffects}
         camera={camera}
         blobTracking={blobTracking}
-        gridBackground={gridBackground}
         onMoodChange={handleMoodChange}
         onMovementChange={handleMovementChange}
         onAtmosphereChange={handleAtmosphereChange}
@@ -986,7 +948,6 @@ export default function App() {
         onCameraChange={handleCameraChange}
         onCameraNumberChange={handleCameraNumberChange}
         onBlobTrackingChange={handleBlobTrackingChange}
-        onGridBackgroundChange={handleGridBackgroundChange}
         depthAnything={depthAnything}
         onDepthAnythingChange={handleDepthAnythingChange}
         motionAnalysis={motionAnalysis}

@@ -153,18 +153,6 @@ export function PitchDeckModal({
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-              <h4 className="text-white/70 mb-3 text-sm">Grid Background</h4>
-              <div className="space-y-2 text-xs">
-                <div className="text-white/40">
-                  <span className="text-white/70">Styles:</span> Square / Isometric / Polar / Dots
-                </div>
-                <div className="text-white/40">
-                  <span className="text-white/70">Customize:</span> size, colors, line width & opacity
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
               <h4 className="text-white/70 mb-3 text-sm">Post Processing</h4>
               <div className="space-y-2 text-xs">
                 <div className="text-white/40">

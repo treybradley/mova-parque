@@ -103,9 +103,9 @@ export function PoseEstimationLayer({
     onRecordingPoseSampleRef.current = onRecordingPoseSample;
   }, [onRecordingPoseSample]);
 
-  // Clear canvas when skeleton is disabled
+  // Clear canvas only when no pose overlay is enabled
   useEffect(() => {
-    if (!showSkeleton && canvasRef.current) {
+    if (!showSkeleton && !showJointAngles && !showROM && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (ctx) {
@@ -210,7 +210,8 @@ export function PoseEstimationLayer({
 
   // Separate render loop - smooth 60fps rendering independent of pose detection timing
   useEffect(() => {
-    if (!enabled || !showSkeleton || !canvasRef.current) return;
+    const shouldRenderOverlay = showSkeleton || showJointAngles || showROM;
+    if (!enabled || !shouldRenderOverlay || !canvasRef.current) return;
     
     let renderAnimationId: number;
     
@@ -264,7 +265,7 @@ export function PoseEstimationLayer({
     return () => {
       if (renderAnimationId) cancelAnimationFrame(renderAnimationId);
     };
-  }, [enabled, showSkeleton, metrics, confidenceThreshold]);
+  }, [enabled, showSkeleton, showJointAngles, showROM, metrics, confidenceThreshold]);
   
   // Process pose and calculate metrics
   async function processPose(pose: poseDetection.Pose) {
@@ -312,8 +313,8 @@ export function PoseEstimationLayer({
       });
     }
 
-    // Clear canvas if skeleton is disabled
-    if (!showSkeleton) {
+    // Clear canvas when no pose overlay is enabled
+    if (!showSkeleton && !showJointAnglesRef.current && !showROMRef.current) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   }
