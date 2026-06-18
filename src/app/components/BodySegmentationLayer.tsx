@@ -27,10 +27,12 @@ interface BodySegmentationLayerProps {
     depth: number;
     blendMode?: string;
   };
+  /** When true with ghost trails, silhouettes sample Depth Anything output instead of raw video. */
+  depthEnabled?: boolean;
   enabled: boolean;
 }
 
-export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects, mood, distortion, atmosphere, enabled, sharedWebcamVideoRef }: BodySegmentationLayerProps) {
+export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled = false, enabled, sharedWebcamVideoRef }: BodySegmentationLayerProps) {
   // Use shared video ref for webcam, or create own if not provided
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -47,6 +49,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
   const bodyEffectsRef = useRef(bodyEffects);
   const distortionRef = useRef(distortion);
   const atmosphereRef = useRef(atmosphere);
+  const depthEnabledRef = useRef(depthEnabled);
 
   // Update refs when props change
   useEffect(() => {
@@ -54,7 +57,8 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
     bodyEffectsRef.current = bodyEffects;
     distortionRef.current = distortion;
     atmosphereRef.current = atmosphere;
-  }, [mood, bodyEffects, distortion, atmosphere]);
+    depthEnabledRef.current = depthEnabled;
+  }, [mood, bodyEffects, distortion, atmosphere, depthEnabled]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -257,7 +261,16 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
     };
 
     let effectsAnimationId: number;
+    let lastDepthGhostKey = "";
 
+    const clearFrameBuffers = () => {
+      for (let i = 0; i < frameBuffers.length; i++) {
+        const bufCtx = frameBuffers[i].getContext("2d");
+        if (bufCtx && frameBuffers[i].width > 0 && frameBuffers[i].height > 0) {
+          bufCtx.clearRect(0, 0, frameBuffers[i].width, frameBuffers[i].height);
+        }
+      }
+    };
 
     const renderEffects = () => {
       timeRef.current += 0.01;
@@ -446,29 +459,57 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         }
       }
 
-      // === COMPOSITE VIDEO THROUGH SEGMENTATION MASK ===
-      // Always draw full video feed masked to the person silhouette
-      if (activeVideoElement && activeVideoElement.readyState === 4) {
-        tempCtx.globalCompositeOperation = 'source-over';
+      const depthCanvas = document.querySelector(
+        "canvas.depth-layer-canvas"
+      ) as HTMLCanvasElement | undefined;
+      const depthCanvasValid =
+        depthCanvas != null && depthCanvas.width > 1 && depthCanvas.height > 1;
+      const useDepthSource =
+        depthEnabledRef.current &&
+        bodyEffectsRef.current.showGhostTrails &&
+        depthCanvasValid;
+
+      const depthGhostKey = `${useDepthSource}-${bodyEffectsRef.current.showGhostTrails}-${depthEnabledRef.current}`;
+      if (depthGhostKey !== lastDepthGhostKey) {
+        clearFrameBuffers();
+        lastDepthGhostKey = depthGhostKey;
+      }
+
+      // === COMPOSITE SOURCE THROUGH SEGMENTATION MASK ===
+      // Default: raw video. When depth + ghost trails are both on, use depth-filtered frame.
+      const maskReady = sourceCanvas.width > 0 && sourceCanvas.height > 0;
+      const videoReady =
+        activeVideoElement != null && activeVideoElement.readyState === 4;
+
+      if (maskReady && (useDepthSource || videoReady)) {
+        tempCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        tempCtx.globalCompositeOperation = "source-over";
         tempCtx.globalAlpha = 1;
-        
-        // Enable high-quality image smoothing for better scaling
         tempCtx.imageSmoothingEnabled = true;
-        tempCtx.imageSmoothingQuality = 'high';
-        
-        // Draw full video with proper aspect ratio
-        tempCtx.drawImage(activeVideoElement, drawX, drawY, drawWidth, drawHeight);
-        
-        // Use mask to cut out the person shape (same positioning as video)
-        tempCtx.globalCompositeOperation = 'destination-in';
-        if (sourceCanvas.width > 0 && sourceCanvas.height > 0) {
-          tempCtx.imageSmoothingEnabled = true;
-          tempCtx.imageSmoothingQuality = 'high';
+        tempCtx.imageSmoothingQuality = "high";
+
+        if (useDepthSource && depthCanvas) {
+          tempCtx.drawImage(depthCanvas, 0, 0, canvasWidth, canvasHeight);
+          tempCtx.globalCompositeOperation = "destination-in";
+          if (videoSource && videoSource instanceof HTMLVideoElement) {
+            // Match DepthLayer upload layout (full-canvas stretch)
+            tempCtx.drawImage(sourceCanvas, 0, 0, canvasWidth, canvasHeight);
+          } else {
+            tempCtx.drawImage(sourceCanvas, drawX, drawY, drawWidth, drawHeight);
+          }
+        } else if (activeVideoElement) {
+          tempCtx.drawImage(
+            activeVideoElement,
+            drawX,
+            drawY,
+            drawWidth,
+            drawHeight
+          );
+          tempCtx.globalCompositeOperation = "destination-in";
           tempCtx.drawImage(sourceCanvas, drawX, drawY, drawWidth, drawHeight);
         }
-        
-        // Restore to normal compositing for further effects
-        tempCtx.globalCompositeOperation = 'source-over';
+
+        tempCtx.globalCompositeOperation = "source-over";
         tempCtx.globalAlpha = 1;
       }
 
@@ -550,7 +591,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         cancelAnimationFrame(effectsAnimationId);
       }
     };
-  }, [enabled, videoSource, bodyEffects, mood, distortion, atmosphere, sharedWebcamVideoRef]);
+  }, [enabled, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled, sharedWebcamVideoRef]);
 
   if (!enabled) return null;
 

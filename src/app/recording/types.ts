@@ -78,6 +78,10 @@ export interface StartRecordingOptions {
   rawVideoOpacity: number;
   /** Which layers to include in the composite; taken from UI at recording start. */
   layerToggles: RecordingLayerToggles;
+  /** Atmosphere blend mode for body segmentation (matches BodySegmentationLayer CSS mix-blend-mode). */
+  blendMode: string;
+  /** Atmosphere haziness (0–1); affects body layer opacity when blend mode is active. */
+  haziness: number;
   /** When true, draw a logo watermark (e.g. 20% opacity) on the export. Used for anonymous/free users. */
   applyWatermark: boolean;
   /** Interpolated pose overlay for upload exports when kaleidoscope is off. */

@@ -667,6 +667,8 @@ export default function App() {
           showGhostTrails: bodyEffects.showGhostTrails,
           depthEnabled: depthAnything.enabled,
         },
+        blendMode: atmosphere.blendMode,
+        haziness: atmosphere.haziness,
         applyWatermark: !usePremium,
         poseExport:
           source.type === "upload" &&
@@ -712,6 +714,8 @@ export default function App() {
     exportQualityPreset,
     background.kaleidoscope,
     atmosphere.noise,
+    atmosphere.blendMode,
+    atmosphere.haziness,
     camera.showRawVideo,
     camera.rawVideoOpacity,
     bodySegmentation.enabled,
@@ -852,6 +856,7 @@ export default function App() {
               bodyEffects={bodyEffects}
               mood={mood}
               atmosphere={atmosphere}
+              depthEnabled={depthAnything.enabled}
             />
           )}
 

@@ -8,6 +8,18 @@ import { drawLogoWatermarkGrid } from "./watermarkLogo";
 import { interpolatePoseAtTime } from "./poseInterpolation";
 import { drawPoseOverlayOnContext } from "@/utils/drawPoseOverlay";
 
+/** Map CSS blend mode names to canvas globalCompositeOperation (normal → source-over). */
+function toCanvasCompositeOperation(blendMode: string): GlobalCompositeOperation {
+  return blendMode === "normal" ? "source-over" : (blendMode as GlobalCompositeOperation);
+}
+
+/** Match BodySegmentationLayer: container opacity × effects canvas opacity-95. */
+function getBodyLayerAlpha(blendMode: string, haziness: number): number {
+  const shouldApplyBlendMode = blendMode !== "normal";
+  const containerOpacity = shouldApplyBlendMode ? 0.85 + haziness * 0.15 : 1.0;
+  return containerOpacity * 0.95;
+}
+
 /**
  * Returns recording dimensions from the current video source.
  * - Upload: uses videoSource.metadata.width/height.
@@ -52,6 +64,8 @@ export function startRecording(
     rawVideoElement,
     rawVideoOpacity,
     layerToggles,
+    blendMode = "normal",
+    haziness = 0.8,
   } = options;
 
   const {
@@ -165,8 +179,11 @@ export function startRecording(
         }
       }
       if (bodySegmentationEnabled && bodyValid && bodyCanvas) {
-        ctx.globalCompositeOperation = "source-over";
+        ctx.globalCompositeOperation = toCanvasCompositeOperation(blendMode);
+        ctx.globalAlpha = getBodyLayerAlpha(blendMode, haziness);
         ctx.drawImage(bodyCanvas, 0, 0, bodyCanvas.width, bodyCanvas.height, 0, 0, destW, destH);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
       }
       if (motionAnalysisEnabled) {
         let drewPose = false;
