@@ -56,7 +56,8 @@ export type GhostCardDeckProps = {
   glCanvasRef?: MutableRefObject<HTMLCanvasElement | null>;
 };
 
-const SLOT_Z = 0.55;
+/** Local font for drei/troika Text (Adobe kit CSS cannot drive WebGL text). */
+const FLOOR_TICK_FONT = "/fonts/RobotoMono-Regular.woff";
 const CARD_HEIGHT = 2.4;
 const FLOOR_Y = -1.35;
 const HOME_CAMERA: [number, number, number] = [0, 0.35, 4.2];
@@ -209,6 +210,7 @@ function TimelineTicks({
             />
           </mesh>
           <Text
+            font={FLOOR_TICK_FONT}
             position={[halfW + 0.12, 0.02, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={major ? 0.09 : 0.07}

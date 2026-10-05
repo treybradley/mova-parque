@@ -2,3 +2,9 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @import 'tw-animate-css';
+
+/* Adobe Typekit families (kit CSS loaded in index.html) */
+@theme {
+  --font-mono: "roboto-mono", ui-monospace, monospace;
+  --font-sans: "joost", system-ui, sans-serif;
+}

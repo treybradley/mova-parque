@@ -1,0 +1,22 @@
+/*
+ * Adobe Fonts kit ldv0cwj is loaded from index.html.
+ * Kit families: roboto-mono, joost, joschmi, xants.
+ *
+ * drei <Text> cannot use CSS @font-face names — it needs a font file URL.
+ * Floor timeline labels use /fonts/RobotoMono-Regular.woff (OFL, same design).
+ */
+
+:root {
+  --font-mono: "roboto-mono", ui-monospace, monospace;
+  --font-sans: "joost", system-ui, sans-serif;
+}
+
+.font-mono,
+.tk-roboto-mono {
+  font-family: var(--font-mono);
+}
+
+.font-sans,
+.tk-joost {
+  font-family: var(--font-sans);
+}
