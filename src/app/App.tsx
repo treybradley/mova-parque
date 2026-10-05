@@ -26,12 +26,25 @@ import {
   useRef,
   useCallback,
   useEffect,
+  lazy,
+  Suspense,
 } from "react";
 import VideoToFramesApp from "./video-to-frames/VideoToFramesApp";
 import MovaScoreApp from "./mova-score/MovaScoreApp";
+import type { CardsStyle, TrailView } from "@/app/ghost-cards/constants";
+import {
+  CARDS_MAX_HISTORY,
+  DEFAULT_CARDS_STYLE,
+} from "@/app/ghost-cards/constants";
 
 type AppMode = 'mova-parque' | 'video-to-frames' | 'mova-score';
 import { AudioEngine } from "@/app/audio/AudioEngine";
+
+const GhostCardDeck = lazy(() =>
+  import("@/app/ghost-cards/GhostCardDeck").then((m) => ({
+    default: m.GhostCardDeck,
+  }))
+);
 import {
   DEFAULT_BLOB_CONFIG,
   BlobTrackingConfig,
@@ -41,10 +54,10 @@ import { PoseFrame } from "@/utils/poseTracking";
 import { MetricsSnapshot } from "@/utils/motionMetrics";
 import {
   getRecordingDimensions,
+  getRecordingFrameRate,
   startRecording,
   EXPORT_QUALITY_BITRATE,
   type VideoSourceForRecording,
-  type ExportFrameRate,
   type ExportQualityPreset,
   type PoseRecordingSample,
 } from "@/app/recording";
@@ -97,6 +110,11 @@ export default function App() {
     trailColorGradient: 0.9,
     showGhostTrails: true,
   });
+  const [trailView, setTrailView] = useState<TrailView>("flat");
+  const [cardsIncludeBackground, setCardsIncludeBackground] = useState(true);
+  const [cardsStyle, setCardsStyle] = useState<CardsStyle>(DEFAULT_CARDS_STYLE);
+  const [cardsCameraResetKey, setCardsCameraResetKey] = useState(0);
+  const ghostCardsGlRef = useRef<HTMLCanvasElement | null>(null);
   const [cameraStream, setCameraStream] =
     useState<MediaStream | null>(null);
   const [cameraFacingMode, setCameraFacingMode] = useState<
@@ -186,7 +204,6 @@ export default function App() {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const recordingEngineRef = useRef<ReturnType<typeof startRecording> | null>(null);
   const recordingDimensionsRef = useRef<{ width: number; height: number } | null>(null);
-  const [exportFrameRate, setExportFrameRate] = useState<ExportFrameRate>(30);
   const [exportQualityPreset, setExportQualityPreset] = useState<ExportQualityPreset>("standard");
   const [signInModalOpen, setSignInModalOpen] = useState(false);
 
@@ -410,8 +427,35 @@ export default function App() {
     key: string,
     value: number | boolean,
   ) => {
-    setBodyEffects((prev) => ({ ...prev, [key]: value }));
+    setBodyEffects((prev) => {
+      const next = { ...prev, [key]: value };
+      if (
+        trailView === "cards" &&
+        key === "ghostFrames" &&
+        typeof value === "number"
+      ) {
+        next.ghostFrames = Math.min(CARDS_MAX_HISTORY, value);
+      }
+      return next;
+    });
   };
+
+  const handleTrailViewChange = useCallback((view: TrailView) => {
+    setTrailView(view);
+    if (view === "cards") {
+      setBodyEffects((prev) => ({
+        ...prev,
+        ghostFrames: Math.min(CARDS_MAX_HISTORY, prev.ghostFrames),
+      }));
+    }
+  }, []);
+
+  const handleCardsStyleChange = useCallback(
+    <K extends keyof CardsStyle>(key: K, value: CardsStyle[K]) => {
+      setCardsStyle((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   const handleBodySegmentationChange = (
     key: string,
@@ -649,10 +693,11 @@ export default function App() {
     try {
       const usePremium = !!user;
       const qualityPreset = usePremium ? exportQualityPreset : "standard";
+      const frameRate = getRecordingFrameRate(source, cameraStream);
       const handle = startRecording({
         width: dims.width,
         height: dims.height,
-        frameRate: exportFrameRate,
+        frameRate,
         videoBitsPerSecond: EXPORT_QUALITY_BITRATE[qualityPreset],
         kaleidoscopeMode: background.kaleidoscope as "none" | "horizontal" | "vertical" | "radial",
         grainIntensity: atmosphere.noise,
@@ -671,6 +716,7 @@ export default function App() {
         haziness: atmosphere.haziness,
         applyWatermark: !usePremium,
         poseExport:
+          trailView !== "cards" &&
           source.type === "upload" &&
           source.videoElement &&
           motionAnalysis.enabled &&
@@ -698,6 +744,7 @@ export default function App() {
                 confidenceThreshold: 0.3,
               }
             : null,
+        cardsMode: trailView === "cards",
       });
       recordingEngineRef.current = handle;
       recordingDimensionsRef.current = { width: dims.width, height: dims.height };
@@ -710,8 +757,8 @@ export default function App() {
     user,
     videoSource,
     cameraStream,
-    exportFrameRate,
     exportQualityPreset,
+    trailView,
     background.kaleidoscope,
     atmosphere.noise,
     atmosphere.blendMode,
@@ -811,108 +858,163 @@ export default function App() {
     return <MovaScoreApp appMode={appMode} onAppModeChange={setAppMode} />;
   }
 
+  const cardsSourceDims = getRecordingDimensions(
+    videoSource as VideoSourceForRecording,
+    cameraStream
+  );
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      <FilmGrainLayer
-        intensity={atmosphere.noise}
-        animationSpeed={atmosphere.grainSpeed}
+      {/* Flat layer stack — stays running in Cards mode (hidden) so textures can composite */}
+      <div
+        className={
+          trailView === "cards"
+            ? "pointer-events-none absolute inset-0 opacity-0"
+            : "contents"
+        }
+        aria-hidden={trailView === "cards"}
       >
-        <KaleidoscopeLayer
-          mode={
-            background.kaleidoscope as
-              | "none"
-              | "horizontal"
-              | "vertical"
-              | "radial"
-          }
-          blendMode={atmosphere.blendMode}
-          videoSource={
-            videoSource.type === "upload"
-              ? videoSource.videoElement
-              : cameraStream
-          }
+        <FilmGrainLayer
+          intensity={atmosphere.noise}
+          animationSpeed={atmosphere.grainSpeed}
         >
-          {/* Depth Anything layer - base when enabled (replaces raw video) */}
-          <DepthLayer
-            videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
-            sharedWebcamVideoRef={sharedWebcamVideoRef}
-            config={depthAnything}
-            hasVideo={
-              (videoSource.type === "upload" && videoSource.videoElement != null) ||
-              (videoSource.type === "webcam" && cameraStream != null)
+          <KaleidoscopeLayer
+            mode={
+              background.kaleidoscope as
+                | "none"
+                | "horizontal"
+                | "vertical"
+                | "radial"
             }
-            webcamVideoReady={webcamVideoReady}
-          />
-
-          {/* Middle layer: Ghost trails and person segmentation with blend mode */}
-          {bodySegmentation.enabled && (
-            <BodySegmentationLayer
-              enabled={
-                (videoSource.type === "upload" && videoSource.videoElement !== null) ||
-                (videoSource.type === "webcam" && cameraStream !== null)
-              }
-              videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
-              sharedWebcamVideoRef={sharedWebcamVideoRef}
-              bodyEffects={bodyEffects}
-              mood={mood}
-              atmosphere={atmosphere}
-              depthEnabled={depthAnything.enabled}
-            />
-          )}
-
-          {/* Pose Estimation Layer - Above body effects (only for uploaded videos) */}
-          <PoseEstimationLayer
-            enabled={
-              motionAnalysis.enabled &&
-              videoSource.type === "upload" &&
-              videoSource.videoElement !== null
-            }
-            videoSource={videoSource.videoElement}
-            onPoseData={handlePoseData}
-            onMetricsData={handleMetricsData}
-            showSkeleton={motionAnalysis.showSkeleton}
-            skeletonColor={motionAnalysis.skeletonColor}
-            skeletonLineWidth={motionAnalysis.skeletonLineWidth}
-            jointSize={motionAnalysis.jointSize}
-            lineStyle={motionAnalysis.lineStyle}
-            showJointAngles={motionAnalysis.showJointAngles}
-            showROM={motionAnalysis.showROM}
-            enabledBones={motionAnalysis.enabledBones}
-            enabledJoints={motionAnalysis.enabledJoints}
-            metrics={metricsSnapshot}
-            jointAngleTextSize={motionAnalysis.jointAngleTextSize}
-            jointAngleTextColor={motionAnalysis.jointAngleTextColor}
-            jointAngleBgColor={motionAnalysis.jointAngleBgColor}
-            romTextSize={motionAnalysis.romTextSize}
-            romTextColor={motionAnalysis.romTextColor}
-            romBgColor={motionAnalysis.romBgColor}
-            onRecordingPoseSample={handleRecordingPoseSample}
-          />
-
-          {/* Raw video layer - hidden when Depth Anything is on (depth is the base) */}
-          {videoSource.type === "upload" && videoSource.videoElement && !depthAnything.enabled && (
-            <RawVideoLayer
-              videoSource={videoSource.videoElement}
-              opacity={camera.showRawVideo ? camera.rawVideoOpacity : 0}
-              enabled={true}
-            />
-          )}
-
-          {/* Blob tracking layer - Renders at z-index 10 (below kaleidoscope) */}
-          <BlobTrackingLayer
-            config={blobTracking}
+            blendMode={atmosphere.blendMode}
             videoSource={
               videoSource.type === "upload"
                 ? videoSource.videoElement
                 : cameraStream
             }
-            sharedWebcamVideoRef={sharedWebcamVideoRef}
+          >
+            {/* Depth Anything layer - base when enabled (replaces raw video) */}
+            <DepthLayer
+              videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
+              sharedWebcamVideoRef={sharedWebcamVideoRef}
+              config={depthAnything}
+              hasVideo={
+                (videoSource.type === "upload" && videoSource.videoElement != null) ||
+                (videoSource.type === "webcam" && cameraStream != null)
+              }
+              webcamVideoReady={webcamVideoReady}
+            />
+
+            {/* Middle layer: Ghost trails and person segmentation with blend mode */}
+            {bodySegmentation.enabled && (
+              <BodySegmentationLayer
+                enabled={
+                  (videoSource.type === "upload" && videoSource.videoElement !== null) ||
+                  (videoSource.type === "webcam" && cameraStream !== null)
+                }
+                videoSource={videoSource.type === "upload" ? videoSource.videoElement : null}
+                sharedWebcamVideoRef={sharedWebcamVideoRef}
+                bodyEffects={bodyEffects}
+                mood={mood}
+                atmosphere={atmosphere}
+                depthEnabled={depthAnything.enabled}
+                trailView={trailView}
+              />
+            )}
+
+            {/* Pose Estimation Layer - Above body effects (only for uploaded videos) */}
+            <PoseEstimationLayer
+              enabled={
+                motionAnalysis.enabled &&
+                videoSource.type === "upload" &&
+                videoSource.videoElement !== null
+              }
+              videoSource={videoSource.videoElement}
+              onPoseData={handlePoseData}
+              onMetricsData={handleMetricsData}
+              showSkeleton={motionAnalysis.showSkeleton}
+              skeletonColor={motionAnalysis.skeletonColor}
+              skeletonLineWidth={motionAnalysis.skeletonLineWidth}
+              jointSize={motionAnalysis.jointSize}
+              lineStyle={motionAnalysis.lineStyle}
+              showJointAngles={motionAnalysis.showJointAngles}
+              showROM={motionAnalysis.showROM}
+              enabledBones={motionAnalysis.enabledBones}
+              enabledJoints={motionAnalysis.enabledJoints}
+              metrics={metricsSnapshot}
+              jointAngleTextSize={motionAnalysis.jointAngleTextSize}
+              jointAngleTextColor={motionAnalysis.jointAngleTextColor}
+              jointAngleBgColor={motionAnalysis.jointAngleBgColor}
+              romTextSize={motionAnalysis.romTextSize}
+              romTextColor={motionAnalysis.romTextColor}
+              romBgColor={motionAnalysis.romBgColor}
+              onRecordingPoseSample={handleRecordingPoseSample}
+            />
+
+            {/* Raw video layer - hidden when Depth Anything is on (depth is the base) */}
+            {videoSource.type === "upload" && videoSource.videoElement && !depthAnything.enabled && (
+              <RawVideoLayer
+                videoSource={videoSource.videoElement}
+                opacity={camera.showRawVideo ? camera.rawVideoOpacity : 0}
+                enabled={true}
+              />
+            )}
+
+            {/* Blob tracking layer - Renders at z-index 10 (below kaleidoscope) */}
+            <BlobTrackingLayer
+              config={blobTracking}
+              videoSource={
+                videoSource.type === "upload"
+                  ? videoSource.videoElement
+                  : cameraStream
+              }
+              sharedWebcamVideoRef={sharedWebcamVideoRef}
+            />
+          </KaleidoscopeLayer>
+        </FilmGrainLayer>
+      </div>
+
+      {trailView === "cards" && (
+        <Suspense fallback={null}>
+          <GhostCardDeck
+            ghostTrail={bodyEffects.ghostTrail}
+            ghostFrames={bodyEffects.ghostFrames}
+            ghostDecay={bodyEffects.ghostDecay}
+            ghostSpeed={bodyEffects.ghostSpeed}
+            showGhostTrails={bodyEffects.showGhostTrails}
+            includeBackground={cardsIncludeBackground}
+            kaleidoscopeMode={
+              background.kaleidoscope as
+                | "none"
+                | "horizontal"
+                | "vertical"
+                | "radial"
+            }
+            blendMode={atmosphere.blendMode}
+            haziness={atmosphere.haziness}
+            grainIntensity={atmosphere.noise}
+            showRawVideo={camera.showRawVideo}
+            rawVideoElement={
+              videoSource.type === "upload"
+                ? videoSource.videoElement
+                : sharedWebcamVideoRef.current
+            }
+            rawVideoOpacity={camera.rawVideoOpacity}
+            bodySegmentationEnabled={bodySegmentation.enabled}
+            motionAnalysisEnabled={motionAnalysis.enabled}
+            blobTrackingEnabled={blobTracking.enabled}
+            depthEnabled={depthAnything.enabled}
+            sourceWidth={cardsSourceDims.width}
+            sourceHeight={cardsSourceDims.height}
+            cardsStyle={cardsStyle}
+            cameraResetKey={cardsCameraResetKey}
+            glCanvasRef={ghostCardsGlRef}
           />
-        </KaleidoscopeLayer>
-      </FilmGrainLayer>
+        </Suspense>
+      )}
 
       <WatermarkLayer
-        show={!canUsePremiumExport}
+        show={!canUsePremiumExport && trailView === "flat"}
         videoSource={
           videoSource.type === "upload"
             ? videoSource.videoElement
@@ -921,7 +1023,7 @@ export default function App() {
       />
 
       {/* Motion Analysis Overlay - UI overlay */}
-      {motionAnalysis.enabled && (
+      {motionAnalysis.enabled && trailView === "flat" && (
           <MotionAnalysisOverlay
             enabled={motionAnalysis.enabled}
             metrics={metricsSnapshot}
@@ -967,14 +1069,21 @@ export default function App() {
         cameraStream={cameraStream}
         isRecording={isRecording}
         recordingStartTime={recordingStartTime}
-        exportFrameRate={exportFrameRate}
-        onExportFrameRateChange={setExportFrameRate}
         exportQualityPreset={exportQualityPreset}
         onExportQualityPresetChange={setExportQualityPreset}
         onStartRecording={handleStartRecording}
         onStopRecording={handleStopRecording}
         canUsePremiumExport={canUsePremiumExport}
         onRequestSignIn={() => setSignInModalOpen(true)}
+        trailView={trailView}
+        onTrailViewChange={handleTrailViewChange}
+        cardsIncludeBackground={cardsIncludeBackground}
+        onCardsIncludeBackgroundChange={setCardsIncludeBackground}
+        cardsStyle={cardsStyle}
+        onCardsStyleChange={handleCardsStyleChange}
+        onCardsCameraReset={() =>
+          setCardsCameraResetKey((k) => k + 1)
+        }
       />
 
       {/* SoundPanel hidden for now - keeping AudioEngine code for future use */}
@@ -1046,14 +1155,24 @@ export default function App() {
           ref={sharedWebcamVideoRef}
           className="pointer-events-none z-[2]"
           style={{
-            visibility: camera.showRawVideo && !depthAnything.enabled ? 'visible' : 'hidden',
+            visibility:
+              trailView === "flat" &&
+              camera.showRawVideo &&
+              !depthAnything.enabled
+                ? "visible"
+                : "hidden",
             position: 'fixed',
             top: 0,
             left: 0,
             width: '100vw',
             height: '100vh',
             objectFit: 'cover', // Fill screen, crop edges if needed (matches body segmentation behavior)
-            opacity: camera.showRawVideo && !depthAnything.enabled ? camera.rawVideoOpacity : 0,
+            opacity:
+              trailView === "flat" &&
+              camera.showRawVideo &&
+              !depthAnything.enabled
+                ? camera.rawVideoOpacity
+                : 0,
           }}
           playsInline
           muted

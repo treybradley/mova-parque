@@ -23,7 +23,8 @@ export interface RecordingDimensions {
   height: number;
 }
 
-export type ExportFrameRate = 30 | 60;
+/** Capture/encode frame rate. Derived from source when possible; UI no longer selects this. */
+export type ExportFrameRate = number;
 
 export type ExportQualityPreset = "standard" | "high" | "max";
 
@@ -86,6 +87,12 @@ export interface StartRecordingOptions {
   applyWatermark: boolean;
   /** Interpolated pose overlay for upload exports when kaleidoscope is off. */
   poseExport?: PoseExportForRecording | null;
+  /**
+   * When true, record a source-sized 2D canvas fed by Cards post-render blits.
+   * Stage uses source aspect (letterboxed) so preview framing matches export.
+   * Watermark overlay is skipped in this path.
+   */
+  cardsMode?: boolean;
 }
 
 export interface RecordingResult {

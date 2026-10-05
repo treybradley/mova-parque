@@ -27,7 +27,12 @@ import { ResponsiveInfoPopover } from "./ui/responsive-info-popover";
 import { BlobTrackingConfig } from "@/utils/blobTracking";
 import { VideoUpload } from "./VideoUpload";
 import { RecordAndExport } from "./RecordAndExport";
-import type { ExportFrameRate, ExportQualityPreset } from "@/app/recording";
+import type { ExportQualityPreset } from "@/app/recording";
+import type { CardsStyle, TrailView } from "@/app/ghost-cards/constants";
+import {
+  CARD_BORDER_PRESETS,
+  CARDS_MAX_HISTORY,
+} from "@/app/ghost-cards/constants";
 
 interface ControlPanelProps {
   mood: {
@@ -135,14 +140,22 @@ interface ControlPanelProps {
   onAppModeChange?: (mode: 'mova-parque' | 'video-to-frames' | 'mova-score') => void;
   isRecording?: boolean;
   recordingStartTime?: number | null;
-  exportFrameRate?: ExportFrameRate;
-  onExportFrameRateChange?: (rate: ExportFrameRate) => void;
   exportQualityPreset?: ExportQualityPreset;
   onExportQualityPresetChange?: (preset: ExportQualityPreset) => void;
   onStartRecording?: () => void;
   onStopRecording?: () => void;
   canUsePremiumExport?: boolean;
   onRequestSignIn?: () => void;
+  trailView?: TrailView;
+  onTrailViewChange?: (view: TrailView) => void;
+  cardsIncludeBackground?: boolean;
+  onCardsIncludeBackgroundChange?: (value: boolean) => void;
+  cardsStyle?: CardsStyle;
+  onCardsStyleChange?: <K extends keyof CardsStyle>(
+    key: K,
+    value: CardsStyle[K],
+  ) => void;
+  onCardsCameraReset?: () => void;
 }
 
 export function ControlPanel(props: ControlPanelProps) {
@@ -426,6 +439,160 @@ export function ControlPanel(props: ControlPanelProps) {
 
             {props.bodySegmentation.enabled && (
               <>
+                {/* Trail view: Flat composite vs 3D card deck */}
+                <div className="space-y-2 pt-0">
+                  <span className="text-[12px] text-white/70 font-light">
+                    Trail View
+                  </span>
+                  <div className="flex gap-1">
+                    {(["flat", "cards"] as TrailView[]).map((view) => (
+                      <button
+                        key={view}
+                        type="button"
+                        onClick={() => props.onTrailViewChange?.(view)}
+                        className={`flex-1 rounded px-2 py-1.5 text-[11px] font-light capitalize transition-colors ${
+                          (props.trailView ?? "flat") === view
+                            ? "bg-white/15 text-white"
+                            : "bg-white/5 text-white/50 hover:bg-white/10"
+                        }`}
+                      >
+                        {view}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(props.trailView ?? "flat") === "cards" && (
+                  <div className="space-y-3 pt-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-white/70 font-light">
+                        Cards Include Background
+                      </span>
+                      <Switch
+                        checked={props.cardsIncludeBackground ?? true}
+                        onCheckedChange={(value) =>
+                          props.onCardsIncludeBackgroundChange?.(value)
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-white/70 font-light">
+                        Glass Cards
+                      </span>
+                      <Switch
+                        checked={props.cardsStyle?.glass ?? true}
+                        onCheckedChange={(value) =>
+                          props.onCardsStyleChange?.("glass", value)
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-white/70 font-light">
+                        Reflective Floor
+                      </span>
+                      <Switch
+                        checked={props.cardsStyle?.showFloor ?? true}
+                        onCheckedChange={(value) =>
+                          props.onCardsStyleChange?.("showFloor", value)
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-white/70 font-light">
+                          Card Border
+                        </span>
+                        <span className="text-xs text-white/50 font-light">
+                          {Math.round((props.cardsStyle?.borderWidth ?? 0) * 1000)}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[props.cardsStyle?.borderWidth ?? 0.02]}
+                        onValueChange={(value) =>
+                          props.onCardsStyleChange?.("borderWidth", value[0])
+                        }
+                        min={0}
+                        max={0.06}
+                        step={0.002}
+                        className="slider-custom"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-[12px] text-white/70 font-light">
+                        Border Color
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {CARD_BORDER_PRESETS.map((preset) => {
+                          const active =
+                            (props.cardsStyle?.borderColor ?? "").toLowerCase() ===
+                            preset.color.toLowerCase();
+                          return (
+                            <button
+                              key={preset.color}
+                              type="button"
+                              title={preset.label}
+                              onClick={() =>
+                                props.onCardsStyleChange?.(
+                                  "borderColor",
+                                  preset.color,
+                                )
+                              }
+                              className={`h-6 w-6 rounded-full border transition-transform ${
+                                active
+                                  ? "scale-110 border-white"
+                                  : "border-white/25 hover:border-white/60"
+                              }`}
+                              style={{ backgroundColor: preset.color }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-white/70 font-light">
+                          Border Opacity
+                        </span>
+                        <span className="text-xs text-white/50 font-light">
+                          {Math.round(
+                            (props.cardsStyle?.borderOpacity ?? 0.45) * 100,
+                          )}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[props.cardsStyle?.borderOpacity ?? 0.45]}
+                        onValueChange={(value) =>
+                          props.onCardsStyleChange?.(
+                            "borderOpacity",
+                            value[0],
+                          )
+                        }
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        className="slider-custom"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => props.onCardsCameraReset?.()}
+                      className="w-full rounded px-2 py-1.5 text-[11px] font-light bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                    >
+                      Reset Camera
+                    </button>
+                    <p className="text-[10px] text-white/35 font-light leading-relaxed">
+                      Scroll to zoom · drag to orbit. Export keeps source aspect
+                      (e.g. 9:16).
+                    </p>
+                  </div>
+                )}
+
                 {/* Show Ghost Trails Toggle */}
                 <div className="flex items-center justify-between pt-0">
                   <span className="text-[12px] text-white/70 font-light">
@@ -485,7 +652,11 @@ export function ControlPanel(props: ControlPanelProps) {
                       )
                     }
                     min={3}
-                    max={90}
+                    max={
+                      (props.trailView ?? "flat") === "cards"
+                        ? CARDS_MAX_HISTORY
+                        : 90
+                    }
                     step={1}
                     className="slider-custom"
                   />
@@ -1846,8 +2017,6 @@ export function ControlPanel(props: ControlPanelProps) {
                   }
                   isRecording={props.isRecording ?? false}
                   recordingStartTime={props.recordingStartTime ?? null}
-                  exportFrameRate={props.exportFrameRate ?? 30}
-                  onExportFrameRateChange={props.onExportFrameRateChange ?? (() => {})}
                   exportQualityPreset={props.exportQualityPreset ?? "standard"}
                   onExportQualityPresetChange={props.onExportQualityPresetChange ?? (() => {})}
                   onStartRecording={props.onStartRecording}

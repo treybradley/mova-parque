@@ -1,4 +1,8 @@
-export { getRecordingDimensions, startRecording } from "./RecordingEngine";
+export {
+  getRecordingDimensions,
+  getRecordingFrameRate,
+  startRecording,
+} from "./RecordingEngine";
 export type {
   VideoSourceForRecording,
   RecordingDimensions,

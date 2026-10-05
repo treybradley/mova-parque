@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as bodySegmentation from '@tensorflow-models/body-segmentation';
 import * as tf from '@tensorflow/tfjs';
+import type { TrailView } from '@/app/ghost-cards/constants';
+import { CARDS_MAX_HISTORY } from '@/app/ghost-cards/constants';
+import {
+  publishGhostCapture,
+  publishGhostDimensions,
+} from '@/app/ghost-cards/ghostFrameBridge';
 
 interface BodySegmentationLayerProps {
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
@@ -29,10 +35,12 @@ interface BodySegmentationLayerProps {
   };
   /** When true with ghost trails, silhouettes sample Depth Anything output instead of raw video. */
   depthEnabled?: boolean;
+  /** Flat = 2D ghost composite; Cards = current-frame only here (history lives in 3D deck). */
+  trailView?: TrailView;
   enabled: boolean;
 }
 
-export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled = false, enabled, sharedWebcamVideoRef }: BodySegmentationLayerProps) {
+export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled = false, trailView = 'flat', enabled, sharedWebcamVideoRef }: BodySegmentationLayerProps) {
   // Use shared video ref for webcam, or create own if not provided
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,6 +58,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
   const distortionRef = useRef(distortion);
   const atmosphereRef = useRef(atmosphere);
   const depthEnabledRef = useRef(depthEnabled);
+  const trailViewRef = useRef(trailView);
 
   // Update refs when props change
   useEffect(() => {
@@ -58,7 +67,8 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
     distortionRef.current = distortion;
     atmosphereRef.current = atmosphere;
     depthEnabledRef.current = depthEnabled;
-  }, [mood, bodyEffects, distortion, atmosphere, depthEnabled]);
+    trailViewRef.current = trailView;
+  }, [mood, bodyEffects, distortion, atmosphere, depthEnabled, trailView]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -303,7 +313,12 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         canvasHeight = viewportHeight;
       }
       
-      const maxFrames = Math.max(3, Math.min(90, Math.floor(bodyEffectsRef.current.ghostFrames))); // 3-90 frames
+      const frameCap =
+        trailViewRef.current === "cards" ? CARDS_MAX_HISTORY : 90;
+      const maxFrames = Math.max(
+        3,
+        Math.min(frameCap, Math.floor(bodyEffectsRef.current.ghostFrames))
+      );
 
       // Resize or initialize buffers if needed (check both canvas dimensions and video aspect ratio)
       if (canvasWidth !== currentWidth || canvasHeight !== currentHeight || frameBuffers.length !== maxFrames) {
@@ -333,6 +348,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         currentHeight = canvasHeight;
         initializeFrameBuffers(canvasWidth, canvasHeight, maxFrames);
         frameCounter = 0;
+        publishGhostDimensions(canvasWidth, canvasHeight);
       }
 
       // Skip rendering if dimensions are invalid
@@ -362,7 +378,10 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
       const frameSkip = Math.max(1, Math.floor(60 - (bodyEffectsRef.current.ghostSpeed * 59)));
 
       // === COMPOSITE ALL GHOST TRAIL FRAMES ===
-      if (bodyEffectsRef.current.showGhostTrails && 
+      // Cards mode: skip flat ghost stack — history is rendered as 3D cards instead.
+      if (
+          trailViewRef.current === "flat" &&
+          bodyEffectsRef.current.showGhostTrails && 
           bodyEffectsRef.current.ghostTrail > 0.05 && 
           frameBuffers.length > 0) {
         
@@ -577,6 +596,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
           ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
         }
         frameBuffers.push(oldestFrame);
+        publishGhostCapture({ width: canvasWidth, height: canvasHeight });
       }
       
       frameCounter++;
@@ -591,7 +611,7 @@ export function BodySegmentationLayer({ onCanvasReady, videoSource, bodyEffects,
         cancelAnimationFrame(effectsAnimationId);
       }
     };
-  }, [enabled, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled, sharedWebcamVideoRef]);
+  }, [enabled, videoSource, bodyEffects, mood, distortion, atmosphere, depthEnabled, trailView, sharedWebcamVideoRef]);
 
   if (!enabled) return null;
 

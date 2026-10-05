@@ -7,14 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import type { ExportFrameRate, ExportQualityPreset } from "@/app/recording";
+import type { ExportQualityPreset } from "@/app/recording";
 
 interface RecordAndExportProps {
   hasVideoSource: boolean;
   isRecording: boolean;
   recordingStartTime: number | null;
-  exportFrameRate: ExportFrameRate;
-  onExportFrameRateChange: (rate: ExportFrameRate) => void;
   exportQualityPreset: ExportQualityPreset;
   onExportQualityPresetChange: (preset: ExportQualityPreset) => void;
   onStartRecording: () => void;
@@ -52,8 +50,6 @@ export function RecordAndExport({
   hasVideoSource,
   isRecording,
   recordingStartTime,
-  exportFrameRate,
-  onExportFrameRateChange,
   exportQualityPreset,
   onExportQualityPresetChange,
   onStartRecording,
@@ -79,71 +75,53 @@ export function RecordAndExport({
         </p>
       )}
 
-      <div className="flex items-end gap-2">
-        <div className="flex-1 space-y-1.5">
-          <Label className="text-xs font-normal text-white/60">Frame rate</Label>
-          <Select
-            value={String(exportFrameRate)}
-            onValueChange={(v) => onExportFrameRateChange(Number(v) as ExportFrameRate)}
-          >
-            <SelectTrigger className="h-8 rounded-lg border-white/10 bg-white/5 text-xs font-light text-white data-[placeholder]:text-white/60 [&_svg]:text-white/80">
-              <SelectValue placeholder="Frame rate" />
-            </SelectTrigger>
-            <SelectContent className="border-white/10 bg-[#2a2d2f] text-white">
-              <SelectItem value="30" className="text-white focus:bg-white/15 focus:text-white">
-                30 fps
-              </SelectItem>
-              <SelectItem value="60" className="text-white focus:bg-white/15 focus:text-white">
-                60 fps
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 space-y-1.5">
-          <Label className="text-xs font-normal text-white/60">Quality</Label>
-          <Select
-            value={effectivePreset}
-            onValueChange={(v) =>
-              canUsePremiumExport &&
-              onExportQualityPresetChange(v as ExportQualityPreset)
-            }
-          >
-            <SelectTrigger className="h-8 rounded-lg border-white/10 bg-white/5 text-xs font-light text-white data-[placeholder]:text-white/60 [&_svg]:text-white/80">
-              <SelectValue placeholder="Quality" />
-            </SelectTrigger>
-            <SelectContent className="border-white/10 bg-[#2a2d2f] text-white">
-              <SelectItem value="standard" className="text-white focus:bg-white/15 focus:text-white">
-                Standard
-              </SelectItem>
-              <SelectItem
-                value="high"
-                disabled={!canUsePremiumExport}
-                title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
-                className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  High
-                  {!canUsePremiumExport && (
-                    <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
-                  )}
-                </span>
-              </SelectItem>
-              <SelectItem
-                value="max"
-                disabled={!canUsePremiumExport}
-                title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
-                className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  Max
-                  {!canUsePremiumExport && (
-                    <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
-                  )}
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-normal text-white/60">Quality</Label>
+        <Select
+          value={effectivePreset}
+          onValueChange={(v) =>
+            canUsePremiumExport &&
+            onExportQualityPresetChange(v as ExportQualityPreset)
+          }
+        >
+          <SelectTrigger className="h-8 rounded-lg border-white/10 bg-white/5 text-xs font-light text-white data-[placeholder]:text-white/60 [&_svg]:text-white/80">
+            <SelectValue placeholder="Quality" />
+          </SelectTrigger>
+          <SelectContent className="border-white/10 bg-[#2a2d2f] text-white">
+            <SelectItem value="standard" className="text-white focus:bg-white/15 focus:text-white">
+              Standard
+            </SelectItem>
+            <SelectItem
+              value="high"
+              disabled={!canUsePremiumExport}
+              title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
+              className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                High
+                {!canUsePremiumExport && (
+                  <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
+                )}
+              </span>
+            </SelectItem>
+            <SelectItem
+              value="max"
+              disabled={!canUsePremiumExport}
+              title={!canUsePremiumExport ? "Sign in to unlock High/Max quality" : undefined}
+              className="text-white focus:bg-white/15 focus:text-white data-[disabled]:opacity-60 data-[disabled]:cursor-not-allowed"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                Max
+                {!canUsePremiumExport && (
+                  <LockIcon className="w-3 h-3 shrink-0 opacity-70" />
+                )}
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-[10px] text-white/35 font-light leading-relaxed">
+          Frame rate matches the source video or webcam when available.
+        </p>
       </div>
       <div className="flex items-center gap-2">
         {!isRecording ? (
