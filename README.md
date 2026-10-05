@@ -5,9 +5,9 @@
 > **Sister product (trainers & athletes):**  
 > **[Mova Atlética](https://www.mova-atletica.xyz/)** · [app.mova-atletica.xyz](https://app.mova-atletica.xyz) · [portfolio case study](https://www.treybradley.xyz/mova-atletica)  
 >
-> **Design system:** [MA Beta Design System (Figma)](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)
+> **Design foundations:** [MA Beta Design System](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System) · product page: [Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)
 
-_Built as the R&D / creative suite next to the motion-analysis MVP (`mova-mvp-dev-01`): shared brand language, glass chrome, auth patterns, and design tokens — different job (play, compose, export) rather than sport coaching._
+_One brand system, many product surfaces._ MA Beta holds shared foundations (color, type, brand). **Mova Parque** is the creative / R&D surface next to Atlética web (`mova-mvp-dev-01`) and iOS — same concepts, implementation-led chrome (glass studio shell), different job (play, compose, export vs sport coaching).
 
 ---
 
@@ -237,25 +237,33 @@ Mini-apps keep **feature** components local (`mova-score/components`, `video-to-
 
 ---
 
-## Design system & component patterns
+## Design system — foundations → product pages
 
-Aligned with **[MA Beta Design System](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** (Figma library fills + components) and the product CSS in `mova-mvp-dev-01` (`src/app/globals.css`). Parque extends the same ramps into a **glass studio chrome** for live FX.
+**[MA Beta](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** defines shared foundations (ramps, type, brand). Each shipped product is a **page / surface** that interprets those concepts — not a 1:1 sync of every Figma component into code.
+
+| Figma / product page | Surface | What it interprets |
+|----------------------|---------|--------------------|
+| **Foundations** (MA Beta library) | Tokens & brand | Stoic Onyx, Parchment, Cenote, type |
+| **Atlética · Web** | `mova-mvp-dev-01` | Sport tools, Account, Motion Studio |
+| **Atlética · iOS** | Native app | Same concepts · Vision / ARKit |
+| **Parque · Studio** | This repo | Creative lab · glass chrome · three mini-apps |
+
+Live Parque UI is **implementation-led** (Radix / shadcn defaults + glass twist). Figma documents the shared vocabulary and as-built patterns; it does not claim unused legacy component sets match production.
 
 ```mermaid
 flowchart TB
-  FIG["MA Beta · Figma"] --> TOK["CSS tokens<br/>theme.css · fonts.css"]
-  TOK --> UI["components/ui"]
-  TYPE["Typekit · roboto-mono · joost<br/>+ Atlética Roboto / Roboto Mono"] --> UI
+  FOUND["MA Beta · Foundations<br/>ramps · type · brand"] --> WEB["Atlética · Web"]
+  FOUND --> IOS["Atlética · iOS"]
+  FOUND --> PQ["Parque · Studio"]
+  PQ --> TOK["theme.css · fonts.css · Typekit"]
+  TOK --> UI["components/ui · Radix"]
   UI --> SHELL["Glass sidebar · app switcher"]
-  UI --> MODALS["SignIn · Pitch · Usage"]
-  SHELL --> PQ["Parque controls"]
-  SHELL --> VTF["VTF sidebar"]
-  SHELL --> MS["Score sidebar"]
+  SHELL --> APPS["Parque · VTF · Score"]
 ```
 
-### Color ramps (from Figma)
+### Color ramps (foundations)
 
-Library styles in MA Beta: **Stoic Onyx**, **Anatomical Parchment**, **Cenote Blue**, **Bioluminescent Green**, **Endurance Red**.
+Library styles: **Stoic Onyx**, **Anatomical Parchment**, **Cenote Blue**, **Bioluminescent Green**, **Endurance Red**.
 
 <p align="center">
   <img src="docs/design-system/ma-beta-palette.png" alt="MA Beta color ramps — Stoic Onyx, Anatomical Parchment, Cenote Blue, Bioluminescent Green, Endurance Red" width="720" />
@@ -271,7 +279,19 @@ Library styles in MA Beta: **Stoic Onyx**, **Anatomical Parchment**, **Cenote Bl
 | Bioluminescent Green / `--success` | `#64FF58` | Armed / positive states |
 | Endurance Red / `--error` · warning | `#FC7C7C` · `#ff8044` | Errors · caution |
 
-**Parque glass chrome** (creative extension of Stoic Onyx):
+### Parque · Studio — as-built patterns
+
+Creative extension of Stoic Onyx, reverse-documented from live code on the Figma **[Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)** page (*code → Figma*, ready for bidirectional iteration):
+
+| Figma component | Live source | Variants |
+|-----------------|-------------|----------|
+| **Parque / GlassButton** | Webcam / primary actions | Default · Hover · Active · Disabled |
+| **Parque / IconButton** | Header ⋮ / close | Default · Hover |
+| **Parque / SegmentedControl** | Trail View flat/cards | Selected=flat · cards |
+| **Parque / MegaMenu** | Apps & Account dropdown | Closed · Open |
+| **Parque / StagingArea** | Upload or record video | Empty · Upload · Webcam |
+| **Parque / SectionAccordion** | `CollapsibleSection` | Closed · Open |
+| **Parque / StudioSiderail** | Control panel shell | Desktop 400 · Mobile 320 |
 
 | Pattern | Values |
 |---------|--------|
@@ -279,46 +299,31 @@ Library styles in MA Beta: **Stoic Onyx**, **Anatomical Parchment**, **Cenote Bl
 | Label | `text-white/60` · `uppercase` · `tracking-wider` · `text-[11px]` |
 | Control | `bg-white/5` · hover `bg-white/10` · active `bg-white/15` |
 
+```
+Glass sidebar
+├── Header — title · MegaMenu · close
+├── StagingArea — upload dropzone / webcam
+├── SectionAccordion stack — Body Trails · Motion & Depth · …
+└── Footer — Record & Export
+```
+
 ### Typography
 
 | Family | Source | Use |
 |--------|--------|-----|
 | **roboto-mono** | Adobe Fonts kit `ldv0cwj` | Metrics, timecodes, Cards floor ticks (`font-mono`) |
 | **joost** | Same Typekit kit | Display / sans option (`--font-sans`) |
-| **Roboto / Roboto Mono** | Atlética product · MA Beta | Reference parity with portfolio |
-
-### Components (from Figma)
-
-MA Beta ships shared primitives (Button set, toggles, FABs, alerts, date pickers, etc.). Parque maps them through Radix + `components/ui` with the same token language.
-
-<p align="center">
-  <img src="docs/design-system/ma-beta-button.png" alt="MA Beta Design System Button component set" width="480" />
-</p>
-
-Source frame: [MA Beta · Button](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=93-16302) · palette board on Core UI (`README · MA Beta Palette`).
-
-### Component anatomy — shared shell
-
-```
-Glass sidebar
-├── Header — Logomark · title · app-mode dropdown · account
-├── Source — webcam / upload / facing mode
-├── Section stack — collapsible controls (Parque) or tabs (VTF / Score)
-└── Footer — record / export / links
-
-Primitives: Radix Dialog, Slider, Switch, Select, Dropdown …
-Tokens: theme.css + Typekit · utility classes shared across mini-app sidebars
-```
+| **Roboto / Roboto Mono** | Atlética · MA Beta foundations | Product parity / portfolio |
 
 | Area | Location |
 |------|----------|
 | Shell / Parque controls | `src/app/components/ControlPanel.tsx` |
 | UI kit | `src/app/components/ui/` |
 | Tokens / type | `src/styles/theme.css`, `fonts.css`, `index.html` Typekit link |
-| Design docs (Figma exports) | `docs/design-system/` |
+| Design docs (exports) | `docs/design-system/` |
 | VTF / Score chrome | `*/components/sidebar.tsx`, `animated-gradient`, `film-grain`, `grid-pattern` |
 
-Figma file: **[MA Beta Design System](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** · portfolio gallery: **[treybradley.xyz/mova-atletica](https://www.treybradley.xyz/mova-atletica)**.
+Figma: **[MA Beta](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** · **[Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)** · portfolio: **[treybradley.xyz/mova-atletica](https://www.treybradley.xyz/mova-atletica)**.
 
 ---
 
