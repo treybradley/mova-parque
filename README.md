@@ -5,7 +5,7 @@
 > **Sister product (trainers & athletes):**  
 > **[Mova Atlética](https://www.mova-atletica.xyz/)** · [app.mova-atletica.xyz](https://app.mova-atletica.xyz) · [portfolio case study](https://www.treybradley.xyz/mova-atletica)  
 >
-> **Design foundations:** [MA Beta Design System](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System) · product page: [Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)
+> **Design foundations:** [MA Beta Design System](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System) · product page: [Mova Parque](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6261-2)
 
 _One brand system, many product surfaces._ MA Beta holds shared foundations (color, type, brand). **Mova Parque** is the creative / R&D surface next to Atlética web (`mova-mvp-dev-01`) and iOS — same concepts, implementation-led chrome (glass studio shell), different job (play, compose, export vs sport coaching).
 
@@ -281,7 +281,7 @@ Library styles: **Stoic Onyx**, **Anatomical Parchment**, **Cenote Blue**, **Bio
 
 ### Parque · Studio — as-built patterns
 
-Creative extension of Stoic Onyx, reverse-documented from live code on the Figma **[Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)** page (*code → Figma*, ready for bidirectional iteration):
+Creative extension of Stoic Onyx, reverse-documented from live code on the Figma **[Mova Parque](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6261-2)** page (*code → Figma*, ready for bidirectional iteration):
 
 | Figma component | Live source | Variants |
 |-----------------|-------------|----------|
@@ -292,6 +292,12 @@ Creative extension of Stoic Onyx, reverse-documented from live code on the Figma
 | **Parque / StagingArea** | Upload or record video | Empty · Upload · Webcam |
 | **Parque / SectionAccordion** | `CollapsibleSection` | Closed · Open |
 | **Parque / StudioSiderail** | Control panel shell | Desktop 400 · Mobile 320 |
+
+**Full screens (live capture)** on the same Figma page:
+
+<p align="center">
+  <img src="docs/design-system/screenshots/parque-desktop-live.png" alt="Mova Parque desktop shell — live capture" width="720" />
+</p>
 
 | Pattern | Values |
 |---------|--------|
@@ -323,7 +329,7 @@ Glass sidebar
 | Design docs (exports) | `docs/design-system/` |
 | VTF / Score chrome | `*/components/sidebar.tsx`, `animated-gradient`, `film-grain`, `grid-pattern` |
 
-Figma: **[MA Beta](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** · **[Parque · Studio](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6262-2)** · portfolio: **[treybradley.xyz/mova-atletica](https://www.treybradley.xyz/mova-atletica)**.
+Figma: **[MA Beta](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System)** · **[Mova Parque](https://www.figma.com/design/If7L5q9fnsivf9mkaiFH4n/MA-Beta-Design-System?node-id=6261-2)** · portfolio: **[treybradley.xyz/mova-atletica](https://www.treybradley.xyz/mova-atletica)**.
 
 ---
 
