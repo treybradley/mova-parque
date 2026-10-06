@@ -1,22 +1,21 @@
 /*
- * Adobe Fonts kit ldv0cwj is loaded from index.html.
- * Kit families: roboto-mono, joost, joschmi, xants.
+ * Typography aligned with MA Beta / Mova Atlética:
+ *   Roboto — UI body / chrome
+ *   Roboto Mono — metrics, timecodes, Cards floor ticks
  *
- * drei <Text> cannot use CSS @font-face names — it needs a font file URL.
- * Floor timeline labels use /fonts/RobotoMono-Regular.woff (OFL, same design).
+ * Loaded from Google Fonts in index.html.
+ * drei <Text> uses /fonts/RobotoMono-Regular.woff (local file URL).
  */
 
 :root {
-  --font-mono: "roboto-mono", ui-monospace, monospace;
-  --font-sans: "joost", system-ui, sans-serif;
+  --font-sans: "Roboto", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
 }
 
-.font-mono,
-.tk-roboto-mono {
-  font-family: var(--font-mono);
-}
-
-.font-sans,
-.tk-joost {
+.font-sans {
   font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
 }

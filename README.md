@@ -62,7 +62,7 @@ flowchart TB
     CP["ControlPanel / Sidebar chrome"]
     AUTH["AuthProvider · SignInModal · Supabase"]
     UI["components/ui · Radix + tokens"]
-    DS["fonts.css · theme.css · Typekit"]
+    DS["fonts.css · theme.css · Google Fonts"]
   end
 
   subgraph Mini["Mini-apps"]
@@ -108,7 +108,7 @@ flowchart TB
 | Layer | Technology |
 |-------|------------|
 | App shell | Vite 6, React 18, TypeScript |
-| Styling | Tailwind CSS 4, CSS variables, Adobe Fonts (Typekit `ldv0cwj`) |
+| Styling | Tailwind CSS 4, CSS variables, Google Fonts (Roboto / Roboto Mono) |
 | UI primitives | Radix UI + shadcn-style `components/ui` |
 | 3D / Cards | Three.js, React Three Fiber, Drei |
 | Pose / body | TensorFlow.js, `@tensorflow-models/pose-detection` (MoveNet), `@tensorflow-models/body-segmentation` (MediaPipe Selfie) |
@@ -190,7 +190,7 @@ flowchart TB
     S1["Logomark · glass sidebar · app switcher"]
     S2["SignInModal · useAuth"]
     S3["components/ui · dialogs, sliders, buttons"]
-    S4["Design tokens · Typekit · film-grain / gradient motifs"]
+    S4["Design tokens · Roboto · film-grain / gradient motifs"]
   end
 
   subgraph Parque["src/app + components/"]
@@ -255,7 +255,7 @@ flowchart TB
   FOUND["MA Beta · Foundations<br/>ramps · type · brand"] --> WEB["Atlética · Web"]
   FOUND --> IOS["Atlética · iOS"]
   FOUND --> PQ["Parque · Studio"]
-  PQ --> TOK["theme.css · fonts.css · Typekit"]
+  PQ --> TOK["theme.css · fonts.css · Roboto"]
   TOK --> UI["components/ui · Radix"]
   UI --> SHELL["Glass sidebar · app switcher"]
   SHELL --> APPS["Parque · VTF · Score"]
@@ -317,15 +317,16 @@ Glass sidebar
 
 | Family | Source | Use |
 |--------|--------|-----|
-| **roboto-mono** | Adobe Fonts kit `ldv0cwj` | Metrics, timecodes, Cards floor ticks (`font-mono`) |
-| **joost** | Same Typekit kit | Display / sans option (`--font-sans`) |
-| **Roboto / Roboto Mono** | Atlética · MA Beta foundations | Product parity / portfolio |
+| **Roboto** | Google Fonts | UI body / chrome (`font-sans`) |
+| **Roboto Mono** | Google Fonts · local woff for drei Text | Metrics, timecodes, Cards ticks (`font-mono`) |
+
+Aligned with MA Beta / Atlética foundations (no Joost / display kits on this surface).
 
 | Area | Location |
 |------|----------|
 | Shell / Parque controls | `src/app/components/ControlPanel.tsx` |
 | UI kit | `src/app/components/ui/` |
-| Tokens / type | `src/styles/theme.css`, `fonts.css`, `index.html` Typekit link |
+| Tokens / type | `src/styles/theme.css`, `fonts.css`, `index.html` Google Fonts |
 | Design docs (exports) | `docs/design-system/` |
 | VTF / Score chrome | `*/components/sidebar.tsx`, `animated-gradient`, `film-grain`, `grid-pattern` |
 

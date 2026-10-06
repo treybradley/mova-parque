@@ -3,8 +3,8 @@
 
 @import 'tw-animate-css';
 
-/* Adobe Typekit families (kit CSS loaded in index.html) */
+/* MA Beta / Atlética typography */
 @theme {
-  --font-mono: "roboto-mono", ui-monospace, monospace;
-  --font-sans: "joost", system-ui, sans-serif;
+  --font-sans: "Roboto", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
 }
