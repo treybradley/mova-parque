@@ -15,6 +15,7 @@ import {
 import {
   ChevronLeft,
   Film,
+  Lock,
   MoreVertical,
   Music,
   Sparkles,
@@ -30,8 +31,9 @@ import { RecordAndExport } from "./RecordAndExport";
 import type { ExportQualityPreset } from "@/app/recording";
 import type { CardsStyle, TrailView } from "@/app/ghost-cards/constants";
 import {
-  CARD_BORDER_PRESETS,
   CARDS_MAX_HISTORY,
+  DEFAULT_CARD_SPACING,
+  MAX_CARD_SPACING,
 } from "@/app/ghost-cards/constants";
 
 interface ControlPanelProps {
@@ -445,24 +447,45 @@ export function ControlPanel(props: ControlPanelProps) {
                     Trail View
                   </span>
                   <div className="flex gap-1">
-                    {(["flat", "cards"] as TrailView[]).map((view) => (
-                      <button
-                        key={view}
-                        type="button"
-                        onClick={() => props.onTrailViewChange?.(view)}
-                        className={`flex-1 rounded px-2 py-1.5 text-[11px] font-light capitalize transition-colors ${
-                          (props.trailView ?? "flat") === view
-                            ? "bg-white/15 text-white"
-                            : "bg-white/5 text-white/50 hover:bg-white/10"
-                        }`}
-                      >
-                        {view}
-                      </button>
-                    ))}
+                    {(["flat", "cards"] as TrailView[]).map((view) => {
+                      const cardsLocked =
+                        view === "cards" && !props.canUsePremiumExport;
+                      return (
+                        <button
+                          key={view}
+                          type="button"
+                          onClick={() => {
+                            if (cardsLocked) {
+                              props.onRequestSignIn?.();
+                              return;
+                            }
+                            props.onTrailViewChange?.(view);
+                          }}
+                          title={
+                            cardsLocked
+                              ? "Sign in to unlock Cards trail view"
+                              : undefined
+                          }
+                          className={`flex-1 rounded px-2 py-1.5 text-[11px] font-light capitalize transition-colors inline-flex items-center justify-center gap-1 ${
+                            (props.trailView ?? "flat") === view
+                              ? "bg-white/15 text-white"
+                              : cardsLocked
+                                ? "bg-white/5 text-white/35 hover:bg-white/10 hover:text-white/55"
+                                : "bg-white/5 text-white/50 hover:bg-white/10"
+                          }`}
+                        >
+                          {view}
+                          {cardsLocked && (
+                            <Lock className="size-3 opacity-70" aria-hidden />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {(props.trailView ?? "flat") === "cards" && (
+                {(props.trailView ?? "flat") === "cards" &&
+                  props.canUsePremiumExport && (
                   <div className="space-y-3 pt-0">
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] text-white/70 font-light">
@@ -503,53 +526,77 @@ export function ControlPanel(props: ControlPanelProps) {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] text-white/70 font-light">
-                          Card Border
+                          Card Spacing
                         </span>
                         <span className="text-xs text-white/50 font-light">
-                          {Math.round((props.cardsStyle?.borderWidth ?? 0) * 1000)}
+                          {(
+                            props.cardsStyle?.cardSpacing ?? DEFAULT_CARD_SPACING
+                          ).toFixed(2)}
                         </span>
                       </div>
                       <Slider
-                        value={[props.cardsStyle?.borderWidth ?? 0.02]}
+                        value={[
+                          props.cardsStyle?.cardSpacing ?? DEFAULT_CARD_SPACING,
+                        ]}
                         onValueChange={(value) =>
-                          props.onCardsStyleChange?.("borderWidth", value[0])
+                          props.onCardsStyleChange?.("cardSpacing", value[0])
                         }
-                        min={0}
-                        max={0.06}
-                        step={0.002}
+                        min={DEFAULT_CARD_SPACING}
+                        max={MAX_CARD_SPACING}
+                        step={0.05}
                         className="slider-custom"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <span className="text-[12px] text-white/70 font-light">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-white/70 font-light">
+                          Card Border
+                        </span>
+                        <span className="text-xs text-white/50 font-light">
+                          {Math.round(props.cardsStyle?.borderWidth ?? 1)}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[props.cardsStyle?.borderWidth ?? 1]}
+                        onValueChange={(value) =>
+                          props.onCardsStyleChange?.("borderWidth", value[0])
+                        }
+                        min={1}
+                        max={10}
+                        step={1}
+                        className="slider-custom"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[12px] text-white/70 font-light">
                         Border Color
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {CARD_BORDER_PRESETS.map((preset) => {
-                          const active =
-                            (props.cardsStyle?.borderColor ?? "").toLowerCase() ===
-                            preset.color.toLowerCase();
-                          return (
-                            <button
-                              key={preset.color}
-                              type="button"
-                              title={preset.label}
-                              onClick={() =>
-                                props.onCardsStyleChange?.(
-                                  "borderColor",
-                                  preset.color,
-                                )
-                              }
-                              className={`h-6 w-6 rounded-full border transition-transform ${
-                                active
-                                  ? "scale-110 border-white"
-                                  : "border-white/25 hover:border-white/60"
-                              }`}
-                              style={{ backgroundColor: preset.color }}
-                            />
-                          );
-                        })}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={props.cardsStyle?.borderColor ?? "#009dff"}
+                          onChange={(e) =>
+                            props.onCardsStyleChange?.(
+                              "borderColor",
+                              e.target.value,
+                            )
+                          }
+                          className="w-12 h-8 rounded border border-white/10 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={props.cardsStyle?.borderColor ?? "#009dff"}
+                          onChange={(e) =>
+                            props.onCardsStyleChange?.(
+                              "borderColor",
+                              e.target.value,
+                            )
+                          }
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-light focus:outline-none focus:border-white/30"
+                          placeholder="#009dff"
+                        />
                       </div>
                     </div>
 
@@ -560,12 +607,12 @@ export function ControlPanel(props: ControlPanelProps) {
                         </span>
                         <span className="text-xs text-white/50 font-light">
                           {Math.round(
-                            (props.cardsStyle?.borderOpacity ?? 0.45) * 100,
+                            (props.cardsStyle?.borderOpacity ?? 0.85) * 100,
                           )}
                         </span>
                       </div>
                       <Slider
-                        value={[props.cardsStyle?.borderOpacity ?? 0.45]}
+                        value={[props.cardsStyle?.borderOpacity ?? 0.85]}
                         onValueChange={(value) =>
                           props.onCardsStyleChange?.(
                             "borderOpacity",

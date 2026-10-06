@@ -16,7 +16,12 @@ import {
 } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { CARDS_MAX_HISTORY, type CardsStyle } from "./constants";
+import {
+  CARDS_MAX_HISTORY,
+  DEFAULT_CARD_SPACING,
+  cardsBorderWorldThickness,
+  type CardsStyle,
+} from "./constants";
 import {
   getGhostFrameBridgeState,
   subscribeGhostFrameBridge,
@@ -58,7 +63,6 @@ export type GhostCardDeckProps = {
 
 /** Local font for drei/troika Text (CSS @font-face cannot drive WebGL text). */
 const FLOOR_TICK_FONT = "/fonts/RobotoMono-Regular.woff";
-const SLOT_Z = 0.55;
 const CARD_HEIGHT = 2.4;
 const FLOOR_Y = -1.35;
 const HOME_CAMERA: [number, number, number] = [0, 0.35, 4.2];
@@ -171,30 +175,32 @@ function TimelineTicks({
   historyCount,
   ghostSpeed,
   cardWidth,
+  slotZ,
 }: {
   historyCount: number;
   ghostSpeed: number;
   cardWidth: number;
+  slotZ: number;
 }) {
   const dt = captureIntervalSec(ghostSpeed);
   const slots = historyCount + 1; // live + history
-  const spanZ = historyCount * SLOT_Z;
+  const spanZ = historyCount * slotZ;
   const railZ = -spanZ / 2;
   const halfW = cardWidth * 0.42;
 
   const ticks = useMemo(() => {
     return Array.from({ length: slots }, (_, slot) => {
-      const z = -slot * SLOT_Z;
+      const z = -slot * slotZ;
       const t = -slot * dt;
       return { z, t, major: slot === 0 || slot === historyCount };
     });
-  }, [slots, historyCount, dt]);
+  }, [slots, historyCount, dt, slotZ]);
 
   return (
     <group position={[0, FLOOR_Y + 0.002, 0]}>
       {/* Center rail along depth */}
       <mesh position={[0, 0, railZ]}>
-        <boxGeometry args={[0.012, 0.004, Math.max(SLOT_Z, spanZ)]} />
+        <boxGeometry args={[0.012, 0.004, Math.max(slotZ, spanZ)]} />
         <meshBasicMaterial color="#9aa3b5" transparent opacity={0.55} />
       </mesh>
 
@@ -299,8 +305,9 @@ function CardPlane({
   borderOpacity: number;
   materialRef?: (m: THREE.MeshBasicMaterial | null) => void;
 }) {
-  const showBorder = borderWidth > 0.001 && borderOpacity > 0.01;
+  const showBorder = borderWidth >= 1 && borderOpacity > 0.01;
   const frameOpacity = Math.min(1, borderOpacity * Math.max(opacity, 0.2));
+  const worldBorder = cardsBorderWorldThickness(borderWidth);
 
   return (
     <group position={[0, 0, z]}>
@@ -327,7 +334,7 @@ function CardPlane({
         <SolidCardFrame
           width={width}
           height={height}
-          thickness={borderWidth}
+          thickness={worldBorder}
           color={borderColor}
           opacity={frameOpacity}
           renderOrder={renderOrder + 1}
@@ -566,8 +573,11 @@ function DeckScene({
     return Array.from({ length: historyCount }, (_, i) => i);
   }, [historyCount]);
 
-  const { glass, showFloor, borderColor, borderWidth, borderOpacity } =
+  const { glass, showFloor, borderColor, borderWidth, borderOpacity, cardSpacing } =
     cardsStyle;
+  const slotZ = Number.isFinite(cardSpacing)
+    ? Math.max(DEFAULT_CARD_SPACING, cardSpacing)
+    : DEFAULT_CARD_SPACING;
   const needEnv = glass || showFloor;
 
   return (
@@ -591,6 +601,7 @@ function DeckScene({
             historyCount={historyCount}
             ghostSpeed={ghostSpeed}
             cardWidth={cardWidth}
+            slotZ={slotZ}
           />
         </>
       )}
@@ -613,7 +624,7 @@ function DeckScene({
 
       {historyMeshes.map((i) => {
         const slotFromFront = historyCount - 1 - i;
-        const z = -(slotFromFront + 1) * SLOT_Z;
+        const z = -(slotFromFront + 1) * slotZ;
         return (
           <CardPlane
             key={i}

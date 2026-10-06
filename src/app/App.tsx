@@ -214,6 +214,12 @@ export default function App() {
     if (!user) setExportQualityPreset("standard");
   }, [user]);
 
+  useEffect(() => {
+    if (!user && trailView === "cards") {
+      setTrailView("flat");
+    }
+  }, [user, trailView]);
+
   // Motion analysis state
   const [motionAnalysis, setMotionAnalysis] = useState({
     enabled: true,
@@ -441,6 +447,10 @@ export default function App() {
   };
 
   const handleTrailViewChange = useCallback((view: TrailView) => {
+    if (view === "cards" && !user) {
+      setSignInModalOpen(true);
+      return;
+    }
     setTrailView(view);
     if (view === "cards") {
       setBodyEffects((prev) => ({
@@ -448,7 +458,7 @@ export default function App() {
         ghostFrames: Math.min(CARDS_MAX_HISTORY, prev.ghostFrames),
       }));
     }
-  }, []);
+  }, [user]);
 
   const handleCardsStyleChange = useCallback(
     <K extends keyof CardsStyle>(key: K, value: CardsStyle[K]) => {
@@ -974,7 +984,7 @@ export default function App() {
         </FilmGrainLayer>
       </div>
 
-      {trailView === "cards" && (
+      {trailView === "cards" && canUsePremiumExport && (
         <Suspense fallback={null}>
           <GhostCardDeck
             ghostTrail={bodyEffects.ghostTrail}
